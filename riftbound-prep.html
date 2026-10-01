@@ -556,19 +556,41 @@ function parseList(text) {
 }
 const total = list => list.reduce((a, c) => a + c.q, 0);
 
+// Reads a pasted deck list. Handles the standard one-line export
+//   "Legend: 1 X Champion: 1 Y MainDeck: 3 A 2 B Battlefields: 1 C Runes: 6 Fury Rune Sideboard: 1 D"
+// and the one-card-per-line style with section headings on their own lines (colon optional).
+const EXPORT_HEADS = [['legend', 'legend'], ['chosen champion', 'champion'], ['champion', 'champion'], ['main deck', 'main'], ['maindeck', 'main'], ['main', 'main'], ['deck', 'main'],
+  ['battlefields', 'bf'], ['battlefield', 'bf'], ['rune deck', 'runes'], ['runes', 'runes'], ['rune', 'runes'], ['sideboard', 'side'], ['side board', 'side']];
 function parseExport(text) {
   const out = { main: [], runes: [], bf: [], side: [], legend: '', champion: '' };
-  let cur = 'main';
-  const heads = [[/^legend/i, 'legend'], [/^(chosen )?champion/i, 'champion'], [/^(main( ?deck)?|deck)$/i, 'main'], [/^runes?( deck)?$/i, 'runes'], [/^battlefields?$/i, 'bf'], [/^side ?board$/i, 'side']];
-  String(text || '').split(/\r?\n/).forEach(line => {
-    const s = line.trim(); if (!s) return;
-    const bare = s.replace(/[:\-–]\s*(\(?\d+\)?)?\s*$/, '').replace(/\s*\(\d+\)\s*$/, '').trim();
-    const h = heads.find(([re]) => re.test(bare) && bare.split(' ').length <= 3);
-    if (h) { cur = h[1]; return; }
-    const name = s.replace(/^\d+\s*[xX]?\s+/, '');
-    if (cur === 'legend') { out.legend = out.legend || name; return; }
-    if (cur === 'champion') { out.champion = out.champion || name; return; }
-    out[cur].push(s);
+  const words = EXPORT_HEADS.map(h => h[0].replace(' ', '\\s*')).join('|');
+  // A heading alone on its line may omit the colon; give it one so both styles split the same way.
+  let t = String(text || '').split(/\r?\n/).map(line => {
+    const bare = line.trim().replace(/\s*\(\d+\)\s*$/, '');
+    return new RegExp(`^(${words})$`, 'i').test(bare) ? bare + ':' : line;
+  }).join('\n');
+  const re = new RegExp(`(^|\\s)(${words})\\s*(?:\\(\\d+\\))?\\s*:`, 'gi');
+  const marks = [];
+  let m;
+  while ((m = re.exec(t))) marks.push({ at: m.index + m[1].length, end: re.lastIndex, sec: (EXPORT_HEADS.find(h => h[0] === m[2].toLowerCase().replace(/\s+/g, ' ')) || [, 'main'])[1] });
+  const chunks = [];
+  if (!marks.length || marks[0].at > 0) chunks.push({ sec: 'main', body: t.slice(0, marks.length ? marks[0].at : t.length) });
+  marks.forEach((mk, i) => chunks.push({ sec: mk.sec, body: t.slice(mk.end, i + 1 < marks.length ? marks[i + 1].at : t.length) }));
+  chunks.forEach(({ sec, body }) => {
+    const entries = [];
+    body.split(/\r?\n/).forEach(line => {
+      const l = line.trim(); if (!l) return;
+      if (/^\d+\s*[xX]?\s+\S/.test(l)) {
+        // Several "N Card Name" entries can share one line: a new entry starts at each " <number> <word>".
+        const er = /(\d+)\s*[xX]?\s+(.+?)(?=\s+\d+\s*[xX]?\s+\S|$)/g; let e;
+        while ((e = er.exec(l))) entries.push({ q: +e[1], n: e[2].trim() });
+      } else { const x = l.match(/^(.+?)\s+[xX]\s*(\d+)$/); entries.push(x ? { q: +x[2], n: x[1] } : { q: 1, n: l }); }
+    });
+    entries.forEach(({ q, n }) => {
+      if (sec === 'legend') { out.legend = out.legend || n; return; }
+      if (sec === 'champion') { out.champion = out.champion || n; return; }
+      out[sec].push(`${q} ${n}`);
+    });
   });
   return { ...out, main: out.main.join('\n'), runes: out.runes.join('\n'), bf: out.bf.join('\n'), side: out.side.join('\n') };
 }
@@ -1285,8 +1307,8 @@ function viewDecks() {
       </div>
       ${reportHTML(d)}
       ${S.ui.copy ? copyBox() : ''}
-      ${S.ui.pasteOpen ? `<div class="field" style="margin-bottom:16px"><label class="label" for="paste-box">Paste an exported list. Section headings like Legend, Champion, Main Deck, Battlefields, Runes and Sideboard are recognized; lines look like "3 Card Name".</label>
-        <textarea id="paste-box" class="list" placeholder="Legend:&#10;1 Jinx, Loose Cannon&#10;Main Deck:&#10;3 Card Name&#10;…&#10;Sideboard:&#10;2 Card Name"></textarea>
+      ${S.ui.pasteOpen ? `<div class="field" style="margin-bottom:16px"><label class="label" for="paste-box">Paste a deck list: the standard one-line export (Legend: … Champion: … MainDeck: … Battlefields: … Runes: … Sideboard: …) or one card per line under those headings.</label>
+        <textarea id="paste-box" class="list" placeholder="Legend: 1 Rek'Sai, Void Burrower Champion: 1 Rek'Sai, Breacher MainDeck: 3 Blood Rush 3 Carrion Dredger … Battlefields: 1 Forbidding Waste … Runes: 6 Fury Rune 6 Order Rune Sideboard: 1 Against the Odds …"></textarea>
         <div class="row"><button class="btn primary sm" data-act="paste-apply">Replace deck contents</button><span class="small muted">Name, notes and sideboard guides are kept.</span></div></div>` : ''}
       <div class="grid" style="margin-bottom:14px">
         <div class="field"><label class="label" for="d-name">Deck name</label><input id="d-name" value="${esc(d.name)}" data-bind="deck" data-k="name"></div>
@@ -1560,7 +1582,7 @@ function deckPanelHTML() {
   return `
   <div class="dp-head">
     <div style="min-width:0"><div class="label">Building</div><div class="dp-name">${esc(d.name || 'Untitled deck')}</div></div>
-    <div class="row" style="flex-wrap:nowrap">${bad ? `<button class="pill bad" data-act="save-deck" title="${bad} problem${bad > 1 ? 's' : ''} · click to see them">Illegal</button>` : '<span class="pill ok">Legal</span>'}<button class="btn sm primary" data-act="save-deck">Save deck</button><button class="btn sm dp-close" data-act="drawer" aria-label="Close deck list">Close</button></div>
+    <div class="row" style="flex-wrap:nowrap">${bad ? `<button class="pill bad" data-act="save-deck" title="${bad} problem${bad > 1 ? 's' : ''} · click to see them">Illegal</button>` : '<span class="pill ok">Legal</span>'}<button class="btn sm" data-act="paste-open" title="Paste a deck list">Paste list</button><button class="btn sm primary" data-act="save-deck">Save deck</button><button class="btn sm dp-close" data-act="drawer" aria-label="Close deck list">Close</button></div>
   </div>
   ${reportHTML(d)}
   <div class="dsec">${head('Legend', null)}
@@ -1638,9 +1660,10 @@ function viewCards() {
   </div>
   <button class="deckbar" id="deckbar" data-act="drawer">${deckbarHTML()}</button>`;
 }
+// The standard one-line export, the same format Paste deck list reads.
 function deckText(d) {
-  const sec = (n, t) => t && t.trim() ? `${n}:\n${t.trim()}\n` : '';
-  return [`Legend:\n1 ${d.legend || ''}\n`, d.champion ? `Champion:\n1 ${d.champion}\n` : '', sec('Main Deck', d.main), sec('Battlefields', d.bf), sec('Runes', d.runes), sec('Sideboard', d.side)].join('\n').trim();
+  const sec = (n, t) => { const l = parseList(t); return l.length ? `${n}: ${l.map(c => `${c.q} ${c.n}`).join(' ')}` : ''; };
+  return [d.legend ? `Legend: 1 ${d.legend}` : '', d.champion ? `Champion: 1 ${d.champion}` : '', sec('MainDeck', d.main), sec('Battlefields', d.bf), sec('Runes', d.runes), sec('Sideboard', d.side)].filter(Boolean).join(' ');
 }
 
 // --- Data
@@ -1848,10 +1871,19 @@ document.addEventListener('click', e => {
     case 'pick-deck': S.ui.deckId = b.dataset.id; S.ui.confirm = null; S.ui.pasteOpen = false; S.ui.copy = null; saveUI(); S.form.editId || (S.form.deckId = b.dataset.id); render(); break;
     case 'del-deck': if (d) { removeDoc('decks', d.id); S.ui.confirm = null; S.ui.deckId = null; ensureDeck(); saveUI(); toast('Deck deleted'); render(); } break;
     case 'dom': if (d) { const set = new Set(d.domains || []); set.has(b.dataset.v) ? set.delete(b.dataset.v) : set.add(b.dataset.v); d.domains = DOMAINS.filter(x => set.has(x)); persist('decks', d.id); render(); } break;
+    case 'paste-open': S.ui.pasteOpen = true; S.ui.drawer = false; setTab('decks'); setTimeout(() => document.getElementById('paste-box')?.focus(), 0); break;
     case 'paste-toggle': S.ui.pasteOpen = !S.ui.pasteOpen; render(); break;
     case 'paste-apply': if (d) { const t = document.getElementById('paste-box').value; if (!t.trim()) { toast('Paste a list first.'); break; }
-      const p = parseExport(t); Object.assign(d, { main: p.main, side: p.side, runes: p.runes, bf: p.bf }); if (p.legend) d.legend = p.legend; if (p.champion) d.champion = p.champion;
-      S.ui.pasteOpen = false; persist('decks', d.id); toast('Deck list imported'); render(); } break;
+      const p = parseExport(t);
+      if (!p.legend && !p.champion && !p.main && !p.side && !p.runes && !p.bf) { toast('No cards found. Use lines like "3 Card Name" or the one-line "Legend: 1 … MainDeck: 3 …" format.'); break; }
+      Object.assign(d, { main: p.main, side: p.side, runes: p.runes, bf: p.bf }); if (p.legend) d.legend = p.legend; if (p.champion) d.champion = p.champion;
+      const L = legendOf(d); if (L) d.domains = L.d.slice();
+      if (L && (!d.name || /^new deck/i.test(d.name))) d.name = `${(L.g || [])[0] || L.n} deck`;
+      const all = [p.legend, p.champion, ...[p.main, p.side, p.runes, p.bf].flatMap(x => parseList(x).map(c => c.n))].filter(Boolean);
+      const unknown = CDB.ok ? all.filter(n => !findCard(n)) : [];
+      const v = deckIssues(d);
+      S.ui.pasteOpen = false; persist('decks', d.id); render();
+      toast(`Imported: main deck ${v.mt}, sideboard ${v.st}, runes ${v.rt}, battlefields ${v.bt}${unknown.length ? ` · ${unknown.length} name${unknown.length > 1 ? 's' : ''} not found: ${unknown.slice(0, 3).join(', ')}` : ''}`); } break;
     case 'copy-deck': if (d) copyText(deckText(d), 'Deck list copied'); break;
     case 'field-del': { const f = S.settings.field || []; f.splice(+b.dataset.i, 1); persist('settings', 'main'); render(); break; }
     case 'field-add-seen': { (S.settings.field = S.settings.field || []).push({ arch: b.dataset.arch, share: 0 }); persist('settings', 'main'); render(); break; }
