@@ -522,7 +522,10 @@ const LS_KEY = 'riftprep.local.v1', UI_KEY = 'riftprep.ui.v1', OWNER_KEY = 'rift
 // Supabase → Project Settings → API. Both values are public by design: each account can only
 // read and write its own data, enforced by the row-level security in supabase/setup.sql.
 // Leave them empty to turn cloud saving off.
-const CLOUD_CONFIG = { url: '', anonKey: '' };
+const CLOUD_CONFIG = {
+  url: 'https://dtdbvrogqvblbcmhxfxk.supabase.co',
+  anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR0ZGJ2cm9ncXZibGJjbWh4ZnhrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA4MjgwNjIsImV4cCI6MjEwNjQwNDA2Mn0.th6pj6N1v20eOxmvEU7AJ_Deu-yfnH1adMWX5ReOi-w',
+};
 const CLOUD_LIB = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js';
 const USER_DOMAIN = 'users.riftprep.app'; // usernames become <name>@this-domain behind the scenes; no email is sent
 
@@ -569,6 +572,8 @@ async function cloudAuth(kind, username, password) {
     cloud.msg = /already registered|already exists/i.test(m) ? 'That username is taken. Pick another, or sign in if it’s yours.'
       : /invalid login|invalid credentials/i.test(m) ? 'Username or password is wrong.'
       : !r.error && kind === 'up' ? 'Account created, but sign-in is waiting on email confirmation. Turn off “Confirm email” in Supabase (see the README), then sign in.'
+      : /email (logins|provider|signups?) .*disabled|signups? not allowed|provider is disabled/i.test(m) ? 'Accounts aren’t switched on yet: in Supabase, enable the Email provider (Authentication → Sign In / Providers).'
+      : /not confirmed/i.test(m) ? 'This account is waiting on email confirmation. In Supabase, turn off “Confirm email”, then sign in.'
       : /rate/i.test(m) ? 'Too many attempts. Wait a minute and try again.'
       : `Couldn’t ${kind === 'up' ? 'create the account' : 'sign in'}: ${m || 'unknown error'}.`;
     render(); return;
