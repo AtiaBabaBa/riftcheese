@@ -7,7 +7,8 @@ A tournament-prep tool for the Riftbound TCG: build decks from the full card dat
 ## What it does
 
 - **Cards / deckbuilder** – click cards to add them; Legend, Chosen Champion, main deck, sideboard (10), runes (12) and battlefields (3). Over-limit and banned cards are allowed while building and flagged as *Illegal* when you save. Ban list included (Standard and 2v2, as of 18 Sep 2026).
-- **Match log** – per game: result, who went first, score, both battlefields, and your sideboarding (arrows between main deck and sideboard, prefilled from your guide). Both players' Legend and Chosen Champion, replay links and notes.
+- **Match log** – record each round. Per game: result, who went first, score, both battlefields, and your sideboarding (arrows between main deck and sideboard, prefilled from your guide). Both players' Legend and Chosen Champion, screenshots (upload or paste), replays and notes.
+- **History** – every recorded match with search, deck filter, per-game sideboarding, screenshots and replays.
 - **Matchups** – match, game 1 and post-board win rates per opponent deck, going first vs second, and win rate by battlefield.
 - **Sideboard** – an in/out guide per matchup and a copyable cheat sheet.
 - **Field** – expected match win rate for an event from the decks you expect to face.
@@ -15,7 +16,7 @@ A tournament-prep tool for the Riftbound TCG: build decks from the full card dat
 
 ## Where data is saved
 
-This GitHub Pages version saves everything **in your browser only** (localStorage). Use *Data → Export backup* regularly, and *Import backup* to move to another browser or device. Screenshot and video uploads are not available in this version; paste replay links instead.
+This GitHub Pages version saves everything **in your browser only**: decks and matches in localStorage, screenshots and uploaded replay files in IndexedDB (large screenshots are resized to 1920px). Use *Data → Export backup* regularly and *Import backup* to move to another browser or device. Backups include screenshots but not uploaded video files.
 
 ## Files
 

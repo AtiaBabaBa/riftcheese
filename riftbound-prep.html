@@ -131,6 +131,8 @@ td.r, th.r { text-align: right; }
 
 /* log */
 .log-layout { display: grid; gap: 20px; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); align-items: start; }
+.log-single { max-width: 900px; width: 100%; }
+.hist-sum { margin: 0 0 6px; }
 .evrow { display: grid; gap: 12px; grid-template-columns: minmax(0, 2fr) minmax(64px, .7fr) minmax(150px, 1.3fr); }
 .games { display: grid; gap: 8px; }
 .game { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel-2); }
@@ -195,6 +197,7 @@ td.r, th.r { text-align: right; }
 .shot-img:hover { border-color: var(--accent); }
 .small-shots .shot-img img { height: 56px; max-width: 110px; }
 .mrow .details.shots { display: flex; }
+.shot.missing .shot-img, .shot-img.missing { opacity: .35; }
 .shot-x { position: absolute; top: -6px; right: -6px; width: 22px; height: 22px; border-radius: 50%; border: 0; background: var(--loss); color: #fff; font-weight: 700; cursor: pointer; line-height: 1; }
 .shot-full { display: block; max-width: 100%; max-height: calc(100vh - 120px); margin: 28px auto 0; border-radius: 6px; }
 .replay-video { width: 100%; max-height: 360px; border-radius: 6px; background: #000; }
@@ -439,7 +442,7 @@ button.pill { border: 0; cursor: pointer; }
 const DOMAINS = ['Fury','Calm','Mind','Body','Chaos','Order'];
 const LEGEND_SUGGEST = ["Ahri","Annie","Darius","Garen","Jinx","Kai'Sa","Lee Sin","Leona","Lux","Master Yi","Miss Fortune","Sett","Teemo","Viktor","Volibear","Yasuo"];
 const RULES_DEFAULT = { minMain: 40, maxCopies: 3, runes: 12, battlefields: 3, sideMax: 10, format: 'standard', winPoints: 8 };
-const TABS = [['log','Match log'],['matchups','Matchups'],['sideboard','Sideboard'],['field','Field'],['decks','Decks'],['cards','Cards'],['data','Data']];
+const TABS = [['log','Match log'],['history','History'],['matchups','Matchups'],['sideboard','Sideboard'],['field','Field'],['decks','Decks'],['cards','Cards'],['data','Data']];
 const TYPES = ['Legend','Unit','Spell','Gear','Rune','Battlefield'];
 // Official ban list (playriftbound.com announcements), current as of 18 Sep 2026.
 const BANS = {
@@ -507,12 +510,71 @@ const LS_KEY = 'riftprep.local.v1', UI_KEY = 'riftprep.ui.v1';
 // ---------- state ----------
 const S = {
   decks: {}, matches: {}, settings: { id: 'main', field: [], rules: { ...RULES_DEFAULT } },
-  ui: { tab: 'log', deckId: null, guideKey: null, statsScope: 'deck', logFilter: 'deck', confirm: null, pasteOpen: false, copy: null,
+  ui: { tab: 'log', hq: '', deckId: null, guideKey: null, statsScope: 'deck', logFilter: 'deck', confirm: null, pasteOpen: false, copy: null,
     cf: { q: '', types: [], costs: [], sets: [], sort: 'name', doms: [], fits: true, limit: 60 }, cardKey: null, visual: false, addTo: 'main', drawer: false, cfList: [] },
   form: null,
 };
 const app = document.getElementById('app');
 let mode = 'loading', db = null, downloads = null, assets = null;
+
+// Browser file store (IndexedDB) for versions without Claude's file storage, e.g. GitHub Pages.
+// Same shape as the assets capability (upload/delete) plus get/put for backups.
+const localAssets = (() => {
+  if (!('indexedDB' in window)) return null;
+  let dbp;
+  const open = () => dbp || (dbp = new Promise((res, rej) => {
+    const r = indexedDB.open('riftprep-files', 1);
+    r.onupgradeneeded = () => r.result.createObjectStore('files');
+    r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+  }));
+  const run = async (mode, fn) => {
+    const d = await open();
+    return new Promise((res, rej) => { const t = d.transaction('files', mode), req = fn(t.objectStore('files')); t.oncomplete = () => res(req.result); t.onerror = () => rej(t.error); });
+  };
+  return {
+    local: true,
+    async upload(blob, opts) {
+      const b = opts && opts.type && blob.type !== opts.type ? new Blob([blob], { type: opts.type }) : blob;
+      const id = 'loc' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+      await run('readwrite', st => st.put(b, id));
+      try { navigator.storage && navigator.storage.persist && navigator.storage.persist(); } catch {}
+      const url = URL.createObjectURL(b); assetURLs.set(id, url);
+      return { id, url, sizeBytes: b.size, contentType: b.type };
+    },
+    get: id => run('readonly', st => st.get(id)),
+    put: (id, blob) => run('readwrite', st => st.put(blob, id)),
+    async delete(id) { await run('readwrite', st => st.delete(id)); assetURLs.delete(id); return { deleted: true }; },
+  };
+})();
+const assetURLs = new Map();
+// Where an uploaded file is shown: Claude serves it at /_blob/<id>; the browser store needs an object URL, filled in after render.
+function assetAttr(id, attr = 'src') {
+  return assets && assets.local ? `data-asset="${esc(id)}" data-asset-attr="${attr}"` : `${attr}="/_blob/${esc(id)}"`;
+}
+async function hydrateAssets() {
+  if (!assets || !assets.local) return;
+  for (const el of document.querySelectorAll('[data-asset]:not([data-hyd])')) {
+    el.setAttribute('data-hyd', '1');
+    const id = el.dataset.asset, attr = el.dataset.assetAttr || 'src';
+    let url = assetURLs.get(id);
+    if (!url) { const blob = await assets.get(id).catch(() => null); if (!blob) { el.closest('.shot-img, .shot')?.classList.add('missing'); continue; } url = URL.createObjectURL(blob); assetURLs.set(id, url); }
+    el.setAttribute(attr, url);
+  }
+}
+new MutationObserver(() => { if (assets && assets.local) hydrateAssets(); }).observe(document.documentElement, { childList: true, subtree: true });
+// Large screenshots are scaled to at most 1920px and saved as WebP to keep storage small.
+async function shrinkImage(file) {
+  if (!/^image\/(png|jpeg|webp)$/.test(file.type) || !window.createImageBitmap) return file;
+  try {
+    const bmp = await createImageBitmap(file), k = Math.min(1, 1920 / Math.max(bmp.width, bmp.height));
+    if (k === 1 && file.size < 1.5 * 1048576) { bmp.close && bmp.close(); return file; }
+    const c = document.createElement('canvas'); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+    c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height); bmp.close && bmp.close();
+    const out = await new Promise(r => c.toBlob(r, 'image/webp', 0.86));
+    return out && out.size < file.size ? new File([out], (file.name || 'screenshot').replace(/\.\w+$/, '') + '.webp', { type: 'image/webp' }) : file;
+  } catch { return file; }
+}
+const blobToDataURL = b => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = () => rej(r.error); r.readAsDataURL(b); });
 const loaded = { decks: false, matches: false, settings: false };
 
 const lsGet = k => { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch { return null; } };
@@ -772,7 +834,7 @@ async function boot() {
     bootQueue.forEach(([c, id]) => persist(c, id)); bootQueue.clear();
   } else {
     const pending = { decks: { ...S.decks }, matches: { ...S.matches } };
-    mode = 'local'; loadLocal(); Object.assign(S.decks, pending.decks); Object.assign(S.matches, pending.matches);
+    mode = 'local'; if (!assets && localAssets) assets = localAssets; loadLocal(); Object.assign(S.decks, pending.decks); Object.assign(S.matches, pending.matches);
     loaded.decks = loaded.matches = loaded.settings = true; dirty.clear();
     if (bootQueue.size) saveLocalSoon(); bootQueue.clear(); ensureDeck(); render();
   }
@@ -837,7 +899,7 @@ function render() {
   if (!S.form) S.form = blankForm();
   let html = '';
   if (hasExamples()) html += `<div class="banner"><span>You're looking at example data. Clear it when you're ready to add your own decks and matches.</span><span class="row">${S.ui.confirm === 'examples' ? `<span class="confirm">Delete all example data? <button class="btn sm danger" data-act="clear-examples">Delete</button><button class="btn sm" data-act="unconfirm">Keep</button></span>` : `<button class="btn sm" data-act="confirm" data-what="examples">Clear example data</button>`}</span></div>`;
-  const v = { log: viewLog, matchups: viewMatchups, sideboard: viewSideboard, field: viewField, decks: viewDecks, cards: viewCards, data: viewData }[S.ui.tab] || viewLog;
+  const v = { log: viewLog, matchups: viewMatchups, sideboard: viewSideboard, field: viewField, decks: viewDecks, cards: viewCards, data: viewData, history: viewHistory }[S.ui.tab] || viewLog;
   html += v();
   app.innerHTML = html;
   if (S.ui.tab === 'decks') renderDeckCheck();
@@ -958,13 +1020,13 @@ function fsbEditorHTML(f, g, i, deck) {
   </div>`;
 }
 function shotsFormHTML(f) {
-  const tiles = f.shots.map((x, j) => `<div class="shot"><button type="button" class="shot-img" data-act="shot-view" data-id="${esc(x.id)}" title="${esc(x.name || 'Screenshot')}"><img src="/_blob/${esc(x.id)}" alt="${esc(x.name || 'Screenshot')}" loading="lazy"></button>
+  const tiles = f.shots.map((x, j) => `<div class="shot"><button type="button" class="shot-img" data-act="shot-view" data-id="${esc(x.id)}" title="${esc(x.name || 'Screenshot')}"><img ${assetAttr(x.id)} alt="${esc(x.name || 'Screenshot')}" loading="lazy"></button>
       <button type="button" class="shot-x" data-act="shot-del" data-j="${j}" aria-label="Remove ${esc(x.name || 'screenshot')}">×</button></div>`).join('');
   return `<div class="field"><span class="label">Screenshots</span>
     ${tiles ? `<div class="shots">${tiles}</div>` : ''}
     ${assets ? `<div class="row"><label class="btn sm" for="shot-file">Upload screenshots</label><input id="shot-file" type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden>
-      <span class="small muted" id="shot-status">PNG, JPG, WebP or GIF up to 20 MB each. You can also paste a screenshot (Ctrl+V) while on this tab.</span></div>`
-      : `<span class="small muted">${mode === 'local' ? 'Screenshot uploads aren’t available in this version. Describe the board in Notes instead.' : 'Uploading screenshots needs edit access to this page.'}</span>`}
+      <span class="small muted" id="shot-status">PNG, JPG, WebP or GIF up to 20 MB each. You can also paste a screenshot (Ctrl+V) while on this tab.${assets.local ? ' Saved in this browser with your matches.' : ''}</span></div>`
+      : `<span class="small muted">${mode === 'local' ? 'This browser can’t store files, so screenshot uploads are off.' : 'Uploading screenshots needs edit access to this page.'}</span>`}
   </div>`;
 }
 function replaysFormHTML(f) {
@@ -975,8 +1037,8 @@ function replaysFormHTML(f) {
     ${list ? `<ul class="replays">${list}</ul>` : ''}
     <div class="row" style="flex-wrap:nowrap"><input id="rp-url" type="url" placeholder="Paste a link (YouTube, Twitch, Drive…)" style="flex:1;min-width:0"><button type="button" class="btn sm" data-act="rp-add">Add link</button></div>
     ${assets ? `<div class="row"><label class="btn sm" for="rp-file">Upload replay file</label><input id="rp-file" type="file" accept="video/mp4,video/webm,image/png,image/jpeg,image/webp,image/gif,application/pdf,application/json,.json,text/plain,.txt" hidden>
-      <span class="small muted" id="rp-status">Video (mp4, webm), image, PDF or JSON, up to 20 MB.</span></div>`
-      : `<span class="small muted">${mode === 'local' ? 'File uploads aren’t available in this version; paste a link instead.' : 'Uploading files needs edit access to this page; links still work.'}</span>`}
+      <span class="small muted" id="rp-status">Video (mp4, webm), image, PDF or JSON, up to 20 MB.${assets.local ? ' Saved in this browser only; video files aren’t included in backups.' : ''}</span></div>`
+      : `<span class="small muted">${mode === 'local' ? 'This browser can’t store files; paste a link instead.' : 'Uploading files needs edit access to this page; links still work.'}</span>`}
   </div>`;
 }
 function lineupFormHTML(f, deck) {
@@ -1006,7 +1068,7 @@ function viewLog() {
   const gameRows = f.games.map((g, i) => gameRowHTML(f, g, i, deck)).join('');
   const form = `
   <section class="panel">
-    <div class="panel-head"><h2>${f.editId ? 'Edit match' : 'Record a match'}</h2>${f.editId ? '<button class="btn sm" data-act="cancel-edit">Cancel edit</button>' : ''}</div>
+    <div class="panel-head"><h2>${f.editId ? 'Edit match' : 'Record a match'}</h2><span class="row">${f.editId ? '<button class="btn sm" data-act="cancel-edit">Cancel edit</button>' : ''}<button class="btn sm" data-act="tab" data-tab="history">History (${Object.keys(S.matches).length})</button></span></div>
     <form id="match-form" class="grid" style="grid-template-columns:1fr" autocomplete="off">
       <div class="field"><label class="label" for="f-deck">My deck</label>
         <select id="f-deck" data-bind="form" data-k="deckId">${l.length ? l.map(d => `<option value="${esc(d.id)}"${d.id === f.deckId ? ' selected' : ''}>${esc(d.name || 'Untitled deck')}</option>`).join('') : '<option value="">No decks yet</option>'}</select>${l.length ? '' : '<button type="button" class="btn sm" data-act="new-deck" style="justify-self:start">New deck</button>'}</div>
@@ -1031,9 +1093,19 @@ function viewLog() {
     </form>
   </section>`;
 
+  return `<div class="log-single">${form}</div>`;
+}
+
+
+function historyMatches() {
   let list = sortedMatches();
   if (S.ui.logFilter === 'deck' && S.ui.deckId) list = list.filter(m => m.deckId === S.ui.deckId);
-  const a = aggregate(list);
+  const q = norm(S.ui.hq);
+  if (q) list = list.filter(m => [m.opp, m.oppName, m.event, m.notes, m.oppLegend, m.oppChamp].some(x => norm(x).includes(q)));
+  return list;
+}
+function historyListHTML() {
+  const list = historyMatches(), a = aggregate(list);
   const rows = list.map(m => {
     const rr = matchResult(m), d = S.decks[m.deckId];
     const conf = S.ui.confirm === 'm:' + m.id;
@@ -1055,9 +1127,9 @@ function viewLog() {
       ? `<div class="details"><div class="mlineup">${pic(me.L, 40)}${pic(me.C, 40)}<span class="lu-vs">vs</span>${pic(m.oppLegend, 40)}${pic(m.oppChamp, 40)}</div></div>` : '';
     const reps = (m.replays || []).map((rp, j) => rp.kind === 'file'
       ? (isVideo(rp) ? `<button class="btn sm" data-act="rp-watch" data-id="${esc(m.id)}" data-j="${j}">${S.ui.watch === m.id + ':' + j ? 'Hide' : 'Watch'} ${esc(rp.name || 'replay')}</button>`
-        : `<a class="btn sm" href="/_blob/${esc(rp.id)}" target="_blank" rel="noopener">${esc(rp.name || 'Replay file')}</a>`)
+        : `<a class="btn sm" ${assetAttr(rp.id, 'href')} target="_blank" rel="noopener">${esc(rp.name || 'Replay file')}</a>`)
       : `<a class="btn sm" href="${esc(rp.url)}" target="_blank" rel="noopener">${esc(rp.label || 'Replay link')}</a>`).join('');
-    const watching = (m.replays || []).map((rp, j) => S.ui.watch === m.id + ':' + j && rp.kind === 'file' ? `<video class="replay-video" controls preload="metadata" src="/_blob/${esc(rp.id)}"></video>` : '').join('');
+    const watching = (m.replays || []).map((rp, j) => S.ui.watch === m.id + ':' + j && rp.kind === 'file' ? `<video class="replay-video" controls preload="metadata" ${assetAttr(rp.id)}></video>` : '').join('');
     return `<div class="mrow">
       <div class="date small num muted">${esc(m.date || '')}</div>
       <div style="min-width:0"><div class="opp">vs ${esc(m.opp || 'Unknown')}${m.oppName ? ` <span class="muted" style="font-weight:400">· ${esc(m.oppName)}</span>` : ''}</div>
@@ -1068,21 +1140,27 @@ function viewLog() {
         : `<button class="btn sm" data-act="edit-match" data-id="${esc(m.id)}">Edit</button><button class="btn sm link danger" data-act="confirm" data-what="m:${esc(m.id)}">Delete</button>`}</div>
       ${lineup}
       ${details ? `<div class="details">${details}</div>` : ''}
-      ${(m.shots || []).length ? `<div class="details shots small-shots">${m.shots.map(x => `<button class="shot-img" data-act="shot-view" data-id="${esc(x.id)}" title="${esc(x.name || 'Screenshot')}"><img src="/_blob/${esc(x.id)}" alt="${esc(x.name || 'Screenshot')}" loading="lazy"></button>`).join('')}</div>` : ''}
+      ${(m.shots || []).length ? `<div class="details shots small-shots">${m.shots.map(x => `<button class="shot-img" data-act="shot-view" data-id="${esc(x.id)}" title="${esc(x.name || 'Screenshot')}"><img ${assetAttr(x.id)} alt="${esc(x.name || 'Screenshot')}" loading="lazy"></button>`).join('')}</div>` : ''}
       ${reps ? `<div class="details row">${reps}</div>` : ''}
       ${watching ? `<div class="details">${watching}</div>` : ''}
       ${m.notes ? `<div class="note">${esc(m.notes)}</div>` : ''}
     </div>`;
   }).join('');
-  const history = `
-  <section class="panel">
+  const summary = `<p class="small muted num hist-sum">${list.length} match${list.length === 1 ? '' : 'es'} · ${rec(a.m)} · games ${a.g.W}–${a.g.L}</p>`;
+  return rows ? summary + rows
+    : `<div class="empty"><h3>${S.ui.hq ? 'No matches found' : `No matches recorded${S.ui.logFilter === 'deck' ? ' for this deck' : ''}`}</h3><p>${S.ui.hq ? 'Try a different search, or switch to All decks.' : 'Record your rounds in the Match log tab and they’ll be listed here.'}</p>${S.ui.hq ? '' : '<button class="btn" data-act="tab" data-tab="log">Record a match</button>'}</div>`;
+}
+function viewHistory() {
+  return `<section class="panel">
     <div class="panel-head">
-      <h2>History <span class="muted small num" style="font-weight:500">${list.length} match${list.length === 1 ? '' : 'es'} · ${rec(a.m)} · games ${a.g.W}–${a.g.L}</span></h2>
-      <span class="seg" role="group" aria-label="Filter"><button class="N" data-act="log-filter" data-v="deck" aria-pressed="${S.ui.logFilter === 'deck'}">This deck</button><button class="N" data-act="log-filter" data-v="all" aria-pressed="${S.ui.logFilter === 'all'}">All decks</button></span>
+      <h2 class="section-title">Match history</h2>
+      <div class="row">
+        <input id="h-q" type="search" placeholder="Search opponent, player, event or notes" value="${esc(S.ui.hq)}" data-bind="hist" autocomplete="off" style="width:min(320px,100%)">
+        <span class="seg" role="group" aria-label="Filter"><button class="N" data-act="log-filter" data-v="deck" aria-pressed="${S.ui.logFilter === 'deck'}">This deck</button><button class="N" data-act="log-filter" data-v="all" aria-pressed="${S.ui.logFilter === 'all'}">All decks</button></span>
+      </div>
     </div>
-    ${rows || `<div class="empty"><h3>No matches recorded${S.ui.logFilter === 'deck' ? ' for this deck' : ''}</h3><p>Fill in the form after each round. Game results and who went first feed the Matchups and Field tabs.</p></div>`}
+    <div id="hist-list">${historyListHTML()}</div>
   </section>`;
-  return `<div class="log-layout">${form}${history}</div>`;
 }
 
 // --- Matchups
@@ -1673,7 +1751,7 @@ function viewData() {
   return `
   <section class="panel">
     <div class="panel-head"><h2>Where your data lives</h2></div>
-    <p style="margin:0;max-width:65ch">${mode === 'db' ? 'Decks, matches and guides are saved to this page for your account. Only you and people you give Editor access can see or change them. Share the page as Editor with teammates to prep together.' : 'This view is saving to this browser only. Clearing site data will erase it, so export a backup before events.'}</p>
+    <p style="margin:0;max-width:65ch">${mode === 'db' ? 'Decks, matches and guides are saved to this page for your account. Only you and people you give Editor access can see or change them. Share the page as Editor with teammates to prep together.' : 'This version saves to this browser only, screenshots included. Clearing site data erases it, so export a backup before events; backups include your screenshots (not uploaded video files).'}</p>
     <p class="small muted num" style="margin:8px 0 0">${nD} deck${nD === 1 ? '' : 's'} · ${nM} match${nM === 1 ? '' : 'es'}</p>
   </section>
   <section class="panel">
@@ -1718,10 +1796,48 @@ async function copyText(text, okMsg) {
   try { await navigator.clipboard.writeText(text); toast(okMsg); S.ui.copy = null; }
   catch { S.ui.copy = text; render(); setTimeout(() => { const t = document.getElementById('copy-fallback'); if (t) { t.focus(); t.select(); } }, 0); }
 }
+async function exportBackup() {
+  const data = { app: 'riftbound-prep', version: 2, exported: new Date().toISOString(), decks: S.decks, matches: S.matches, settings: S.settings };
+  // Screenshots stored in this browser go into the backup so they move with the matches.
+  if (assets && assets.local) {
+    const ids = [...new Set(Object.values(S.matches).flatMap(m => (m.shots || []).map(x => x.id)))];
+    if (ids.length) toast(`Packing ${ids.length} screenshot${ids.length > 1 ? 's' : ''}…`);
+    data.files = {};
+    for (const id of ids) { const b = await assets.get(id).catch(() => null); if (b) data.files[id] = await blobToDataURL(b); }
+  }
+  offerFile(`riftbound-prep-${today()}.json`, JSON.stringify(data, null, 2), 'Backup copied to clipboard');
+}
+async function importBackup(j) {
+  // Bring screenshots along: same ids in the browser store, new ids when uploading to Claude storage.
+  const idMap = {};
+  if (j.files && assets) {
+    for (const [id, url] of Object.entries(j.files)) {
+      try {
+        const blob = await (await fetch(url)).blob();
+        if (assets.local) { await assets.put(id, blob); idMap[id] = id; }
+        else { const r = await assets.upload(blob, { type: blob.type }); idMap[id] = r.id; }
+      } catch {}
+    }
+  }
+  Object.values(j.decks || {}).forEach(x => { if (x && x.id) { migrateDeck(x); S.decks[x.id] = x; persist('decks', x.id); } });
+  Object.values(j.matches || {}).forEach(x => {
+    if (!x || !x.id) return;
+    x.shots = (x.shots || []).filter(sh => !j.files || idMap[sh.id]).map(sh => ({ ...sh, id: idMap[sh.id] || sh.id }));
+    S.matches[x.id] = x; persist('matches', x.id);
+  });
+  if (j.settings) { S.settings = { ...S.settings, ...j.settings, id: 'main' }; persist('settings', 'main'); }
+  const nf = Object.keys(idMap).length;
+  ensureDeck(); toast(`Imported ${Object.keys(j.decks || {}).length} decks and ${Object.keys(j.matches || {}).length} matches${nf ? ` with ${nf} screenshot${nf > 1 ? 's' : ''}` : ''}`); render();
+}
 async function offerFile(filename, data, fallbackMsg) {
   if (downloads) {
     try { await downloads.save({ filename, data }); toast('Saved ' + filename); return; }
     catch (e) { if (e && e.code === 'declined') return; if (e && e.code === 'rate_limited') { toast('A save prompt is already open.'); return; } }
+  }
+  if (!window.claude) {
+    const url = URL.createObjectURL(new Blob([data], { type: /\.csv$/.test(filename) ? 'text/csv' : 'application/json' }));
+    const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000); toast('Saved ' + filename); return;
   }
   copyText(data, fallbackMsg);
 }
@@ -1739,8 +1855,9 @@ async function uploadShots(files) {
     if (file.size > 20 * 1048576) { toast(`${file.name} is over 20 MB.`); continue; }
     say(`Uploading ${file.name || 'screenshot'}…`);
     try {
-      const r = await assets.upload(file, { type: file.type });
-      S.form.shots.push({ id: r.id, name: file.name || `Screenshot ${S.form.shots.length + 1}`, size: r.sizeBytes, type: r.contentType }); done++;
+      const img = await shrinkImage(file);
+      const r = await assets.upload(img, { type: img.type });
+      S.form.shots.push({ id: r.id, name: img.name || `Screenshot ${S.form.shots.length + 1}`, size: r.sizeBytes, type: r.contentType }); done++;
     } catch (e) {
       const c = e && e.code;
       say(c === 'quota_or_state' ? 'Storage for this page is full. Remove old screenshots first.' : c === 'rate_limited' ? 'Too many uploads at once. Wait a moment and try again.' : 'Upload failed. Try again.');
@@ -1751,7 +1868,7 @@ async function uploadShots(files) {
 }
 function openShot(id) {
   S.ui.cardKey = null;
-  document.getElementById('modal-body').innerHTML = `<img class="shot-full" src="/_blob/${esc(id)}" alt="Screenshot">`;
+  document.getElementById('modal-body').innerHTML = `<img class="shot-full" ${assetAttr(id)} alt="Screenshot">`;
   const m = document.getElementById('modal'); m.hidden = false; m.querySelector('.modal-x').focus();
 }
 async function uploadReplay(file) {
@@ -1792,7 +1909,7 @@ function saveForm() {
   (prev?.replays || []).filter(x => x.kind === 'file' && !f.replays.some(y => y.id === x.id)).forEach(x => deleteAsset(x.id));
   (prev?.shots || []).filter(x => !f.shots.some(y => y.id === x.id)).forEach(x => deleteAsset(x.id));
   persist('matches', id);
-  toast(f.editId ? 'Match updated' : 'Match saved');
+  toast(f.editId ? 'Match updated · see the History tab' : 'Match saved · see the History tab');
   S.form = blankForm(f.editId ? null : f);
   if (f.editId) S.form.deckId = f.deckId;
   S.ui.sbOpen = null;
@@ -1848,7 +1965,7 @@ document.addEventListener('click', e => {
         games: [0, 1, 2].map(i => gameFromSaved(m.games?.[i])), notes: m.notes || '', replays: (m.replays || []).map(x => ({ ...x })), shots: (m.shots || []).map(x => ({ ...x })),
         oppLegend: m.oppLegend || '', oppChamp: m.oppChamp || '', myLegend: m.myLegend ?? null, myChamp: m.myChamp ?? null };
       S.ui.sbOpen = null;
-      S.ui.confirm = null; render(); window.scrollTo(0, 0); break; }
+      S.ui.confirm = null; S.ui.tab = 'log'; saveUI(); render(); window.scrollTo(0, 0); break; }
     case 'del-match': (S.matches[b.dataset.id]?.replays || []).filter(x => x.kind === 'file').forEach(x => deleteAsset(x.id)); (S.matches[b.dataset.id]?.shots || []).forEach(x => deleteAsset(x.id)); removeDoc('matches', b.dataset.id); S.ui.confirm = null; if (S.form.editId === b.dataset.id) S.form = blankForm(); toast('Match deleted'); render(); break;
     case 'log-filter': S.ui.logFilter = b.dataset.v; saveUI(); render(); break;
     case 'stats-scope': S.ui.statsScope = b.dataset.v; saveUI(); render(); break;
@@ -1888,7 +2005,7 @@ document.addEventListener('click', e => {
     case 'field-del': { const f = S.settings.field || []; f.splice(+b.dataset.i, 1); persist('settings', 'main'); render(); break; }
     case 'field-add-seen': { (S.settings.field = S.settings.field || []).push({ arch: b.dataset.arch, share: 0 }); persist('settings', 'main'); render(); break; }
     case 'rules-reset': S.settings.rules = { ...RULES_DEFAULT }; persist('settings', 'main'); render(); break;
-    case 'export-json': offerFile(`riftbound-prep-${today()}.json`, JSON.stringify({ app: 'riftbound-prep', version: 1, exported: new Date().toISOString(), decks: S.decks, matches: S.matches, settings: S.settings }, null, 2), 'Backup copied to clipboard'); break;
+    case 'export-json': exportBackup(); break;
     case 'export-csv': {
       const gcols = i => [`g${i}`, `g${i}_first`, `g${i}_my_points`, `g${i}_opp_points`, `g${i}_my_battlefield`, `g${i}_opp_battlefield`, `g${i}_sided_in`, `g${i}_sided_out`];
       const head = ['date', 'event', 'round', 'my_deck', 'my_legend', 'my_champion', 'opponent_deck', 'opponent', 'opp_legend', 'opp_champion', 'result', 'games_won', 'games_lost', ...gcols(1), ...gcols(2), ...gcols(3), 'replays', 'notes'];
@@ -1951,6 +2068,7 @@ document.addEventListener('keydown', e => {
 document.addEventListener('input', e => {
   const el = e.target, bind = el.dataset && el.dataset.bind; if (!bind) return;
   const k = el.dataset.k, d = curDeck();
+  if (bind === 'hist') { S.ui.hq = el.value; const h = document.getElementById('hist-list'); if (h) h.innerHTML = historyListHTML(); return; }
   if (bind === 'cf') {
     S.ui.cf[k] = el.value; S.ui.cf.limit = 60; renderResults();
   } else if (bind === 'game') {
@@ -1991,10 +2109,7 @@ document.addEventListener('change', e => {
     r.onload = () => {
       try {
         const j = JSON.parse(r.result); if (!j || typeof j !== 'object' || (!j.decks && !j.matches)) throw 0;
-        Object.values(j.decks || {}).forEach(x => { if (x && x.id) { migrateDeck(x); S.decks[x.id] = x; persist('decks', x.id); } });
-        Object.values(j.matches || {}).forEach(x => { if (x && x.id) { S.matches[x.id] = x; persist('matches', x.id); } });
-        if (j.settings) { S.settings = { ...S.settings, ...j.settings, id: 'main' }; persist('settings', 'main'); }
-        ensureDeck(); toast(`Imported ${Object.keys(j.decks || {}).length} decks and ${Object.keys(j.matches || {}).length} matches`); render();
+        importBackup(j);
       } catch { toast('That file isn’t a Riftbound Prep Book backup.'); }
     };
     r.readAsText(el.files[0]); el.value = '';
