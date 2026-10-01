@@ -66,7 +66,7 @@ main { padding-block: 20px 64px; display: grid; gap: 20px; }
 .section-title { font-family: var(--f-display); font-size: 22px; font-weight: 700; letter-spacing: .02em; }
 
 /* controls */
-input[type=text], input[type=date], input[type=number], input[type=search], input[type=url], input:not([type]), select, textarea {
+input[type=text], input[type=date], input[type=number], input[type=search], input[type=url], input[type=password], input:not([type]), select, textarea {
   background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px; padding: 7px 10px; width: 100%; min-width: 0;
 }
 textarea { resize: vertical; line-height: 1.5; }
@@ -327,6 +327,15 @@ button.pill { border: 0; cursor: pointer; }
 .build-bar { display: flex; gap: 10px 16px; align-items: center; flex-wrap: wrap; }
 .build-bar input { flex: 1; min-width: 200px; }
 .deckbar { display: none; }
+.acct { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line); background: var(--panel); border-radius: 999px; padding: 5px 12px; font-weight: 600; font-size: 13px; cursor: pointer; max-width: 170px; }
+.acct:hover { border-color: var(--accent); }
+.acct-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cdot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex: none; }
+.cdot.ok { background: var(--win); } .cdot.busy { background: var(--gold); } .cdot.bad { background: var(--loss); }
+.cloud-form { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); align-items: end; max-width: 720px; }
+.cloud-form .row { grid-column: 1 / -1; }
+.cloud-msg { margin: 10px 0 0; padding: 8px 12px; border-radius: 6px; background: var(--panel-2); font-size: 14px; }
+.cloud-msg.bad { background: var(--loss-bg); color: var(--loss); }
 .hint-touch { display: none; }
 @media (hover: none) { .hint-mouse { display: none; } .hint-touch { display: inline; } }
 .modal { position: fixed; inset: 0; z-index: 60; background: rgba(8, 10, 14, .55); display: grid; place-items: center; padding: 16px; }
@@ -371,6 +380,7 @@ button.pill { border: 0; cursor: pointer; }
   .status .dot { width: 9px; height: 9px; box-shadow: 0 0 0 2px var(--bg); }
   .brand { position: relative; }
   .deckpick .label { display: none; }
+  .acct { padding: 4px 9px; max-width: 110px; }
   .deckpick select { max-width: 150px; padding-block: 5px; }
   .tab { padding: 6px 11px 8px; }
   main { padding-block: 14px 72px; gap: 14px; }
@@ -425,6 +435,7 @@ button.pill { border: 0; cursor: pointer; }
         <svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 2 28 9v14l-12 7L4 23V9z" fill="none" stroke="var(--accent)" stroke-width="2"/><path d="M16 8v16M10 12l6 4 6-4M10 20l6-4 6 4" fill="none" stroke="var(--gold)" stroke-width="1.6" stroke-linecap="round"/></svg>
         <div><h1>Riftbound Prep Book</h1><div class="status" id="status"><span class="dot"></span><span>Connecting…</span></div></div>
       </div>
+      <button id="acct" class="acct" data-act="tab" data-tab="data" hidden></button>
       <div class="deckpick"><label class="label" for="deck-pick">Deck</label><select id="deck-pick"></select></div>
     </div>
     <nav class="tabs" role="tablist" id="tabs"></nav>
@@ -510,7 +521,15 @@ function qtyIn(text, name) { const k = cardKey(name); const c = parseList(text).
 // Some Legend cards also carry the Champion supertype; only units can be a Chosen Champion.
 const isChampUnit = c => !!c && c.st === 'Champion' && c.t === 'Unit';
 const sectionFor = c => c.t === 'Rune' ? 'runes' : c.t === 'Battlefield' ? 'bf' : 'main';
-const LS_KEY = 'riftprep.local.v1', UI_KEY = 'riftprep.ui.v1';
+const LS_KEY = 'riftprep.local.v1', UI_KEY = 'riftprep.ui.v1', OWNER_KEY = 'riftprep.owner.v1';
+
+// Cloud saving (accounts with username + password) runs on Supabase. Fill these in from
+// Supabase → Project Settings → API. Both values are public by design: each account can only
+// read and write its own data, enforced by the row-level security in supabase/setup.sql.
+// Leave them empty to turn cloud saving off.
+const CLOUD_CONFIG = { url: '', anonKey: '' };
+const CLOUD_LIB = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js';
+const USER_DOMAIN = 'users.riftprep.app'; // usernames become <name>@this-domain behind the scenes; no email is sent
 
 // ---------- state ----------
 const S = {
@@ -521,6 +540,153 @@ const S = {
 };
 const app = document.getElementById('app');
 let mode = 'loading', db = null, downloads = null, assets = null;
+
+// ---------- cloud saving ----------
+const cloud = { enabled: false, client: null, user: null, name: '', state: 'off', msg: '', last: 0, timer: null, busy: false };
+const cloudOn = () => !!(cloud.enabled && cloud.user);
+function loadScript(src) {
+  return new Promise((res, rej) => { const el = document.createElement('script'); el.src = src; el.onload = res; el.onerror = () => rej(new Error('load')); document.head.appendChild(el); });
+}
+async function cloudInit() {
+  if (window.claude || !CLOUD_CONFIG.url || !CLOUD_CONFIG.anonKey) return;
+  cloud.enabled = true; cloud.state = 'signedout';
+  try {
+    await loadScript(CLOUD_LIB);
+    cloud.client = window.supabase.createClient(CLOUD_CONFIG.url, CLOUD_CONFIG.anonKey, { auth: { persistSession: true, autoRefreshToken: true, storageKey: 'riftprep.auth' } });
+    const { data } = await cloud.client.auth.getSession();
+    if (data && data.session) await cloudStart(data.session.user, false);
+    else render();
+  } catch { cloud.state = 'error'; cloud.msg = 'Couldn’t reach the cloud service. Your data is still saved in this browser.'; render(); }
+}
+const userEmail = u => `${u}@${USER_DOMAIN}`;
+const cleanUser = u => String(u || '').trim().toLowerCase();
+async function cloudAuth(kind, username, password) {
+  const u = cleanUser(username);
+  if (!/^[a-z0-9_.-]{3,24}$/.test(u)) { cloud.msg = 'Usernames are 3–24 characters: letters, numbers, dot, dash or underscore.'; render(); return; }
+  if (String(password || '').length < 8) { cloud.msg = 'Passwords need at least 8 characters.'; render(); return; }
+  cloud.state = 'working'; cloud.msg = kind === 'up' ? 'Creating your account…' : 'Signing in…'; render();
+  const r = kind === 'up'
+    ? await cloud.client.auth.signUp({ email: userEmail(u), password, options: { data: { username: u } } })
+    : await cloud.client.auth.signInWithPassword({ email: userEmail(u), password });
+  if (r.error || !r.data.session) {
+    const m = (r.error && r.error.message) || '';
+    cloud.state = 'signedout';
+    cloud.msg = /already registered|already exists/i.test(m) ? 'That username is taken. Pick another, or sign in if it’s yours.'
+      : /invalid login|invalid credentials/i.test(m) ? 'Username or password is wrong.'
+      : !r.error && kind === 'up' ? 'Account created, but sign-in is waiting on email confirmation. Turn off “Confirm email” in Supabase (see the README), then sign in.'
+      : /rate/i.test(m) ? 'Too many attempts. Wait a minute and try again.'
+      : `Couldn’t ${kind === 'up' ? 'create the account' : 'sign in'}: ${m || 'unknown error'}.`;
+    render(); return;
+  }
+  await cloudStart(r.data.session.user, true);
+}
+async function cloudStart(user, fresh) {
+  cloud.user = user; cloud.name = (user.user_metadata && user.user_metadata.username) || String(user.email || '').split('@')[0];
+  assets = cloudAssets;
+  // Data in this browser that belongs to a different account must not leak into this one.
+  const owner = lsGet(OWNER_KEY);
+  if (owner && owner !== user.id) { S.decks = {}; S.matches = {}; S.settings = { id: 'main', field: [], rules: { ...RULES_DEFAULT } }; S.deleted = {}; }
+  await cloudPull(true);
+  lsSet(OWNER_KEY, user.id);
+  if (fresh) toast(`Signed in as ${cloud.name}`);
+}
+function mergeRemote(remote) {
+  const del = { ...(S.deleted || {}), ...(remote.deleted || {}) };
+  const stamp = x => (x && (x.updated || x.created)) || 0;
+  let changed = false;
+  ['decks', 'matches'].forEach(coll => {
+    const mine = S[coll], theirs = remote[coll] || {};
+    new Set([...Object.keys(mine), ...Object.keys(theirs)]).forEach(id => {
+      if (del[id]) { if (mine[id]) { delete mine[id]; changed = true; } return; }
+      if (theirs[id] && (!mine[id] || stamp(theirs[id]) > stamp(mine[id]))) { mine[id] = theirs[id]; changed = true; }
+    });
+  });
+  if (remote.settings && stamp(remote.settings) > stamp(S.settings)) { S.settings = { id: 'main', field: [], rules: { ...RULES_DEFAULT }, ...remote.settings }; changed = true; }
+  const cutoff = Date.now() - 120 * 864e5;
+  S.deleted = Object.fromEntries(Object.entries(del).filter(([, t]) => t > cutoff));
+  return changed;
+}
+async function cloudPull(first) {
+  if (!cloudOn() || cloud.busy) return;
+  cloud.busy = true; cloud.state = 'syncing'; if (first) render();
+  try {
+    const { data, error } = await cloud.client.from('prep_data').select('data').eq('user_id', cloud.user.id).maybeSingle();
+    if (error) throw error;
+    const changed = data && data.data ? mergeRemote(data.data) : false;
+    Object.values(S.decks).forEach(migrateDeck);
+    if (first) await moveLocalFilesToCloud();
+    cloud.busy = false;
+    saveLocalSoon(true);
+    await cloudPush();
+    if (changed || first) { ensureDeck(); render(); }
+  } catch (e) {
+    cloud.busy = false; cloud.state = 'error';
+    cloud.msg = /relation|does not exist|schema/i.test((e && e.message) || '') ? 'The cloud database isn’t set up yet. Run supabase/setup.sql (see the README).' : 'Sync failed. Your changes are kept in this browser and will sync when the connection is back.';
+    render();
+  }
+}
+async function cloudPush() {
+  if (!cloudOn() || cloud.busy) return;
+  clearTimeout(cloud.timer); cloud.busy = true; cloud.state = 'syncing'; renderCloudChip();
+  try {
+    const payload = { decks: S.decks, matches: S.matches, settings: S.settings, deleted: S.deleted || {} };
+    const { error } = await cloud.client.from('prep_data').upsert({ user_id: cloud.user.id, data: payload, updated_at: new Date().toISOString() });
+    if (error) throw error;
+    cloud.state = 'synced'; cloud.last = Date.now(); cloud.msg = '';
+  } catch (e) { cloud.state = 'error'; cloud.msg = 'Sync failed. Your changes are kept in this browser and will sync when the connection is back.'; }
+  cloud.busy = false; renderCloudChip();
+  if (S.ui.tab === 'data') { const el = document.getElementById('cloud-panel'); if (el) el.outerHTML = cloudPanelHTML(); }
+}
+function cloudPushSoon() { if (!cloudOn()) return; clearTimeout(cloud.timer); cloud.state = 'pending'; renderCloudChip(); cloud.timer = setTimeout(cloudPush, 1500); }
+// Screenshots and replay files kept in this browser move to the cloud on first sign-in.
+async function moveLocalFilesToCloud() {
+  if (!localAssets) return;
+  for (const m of Object.values(S.matches)) {
+    let touched = false;
+    for (const list of [m.shots || [], (m.replays || []).filter(r => r.kind === 'file')]) {
+      for (const f of list) {
+        if (!String(f.id).startsWith('loc')) continue;
+        const blob = await localAssets.get(f.id).catch(() => null); if (!blob) continue;
+        try { const r = await cloudAssets.upload(blob, { type: blob.type || f.type }); await localAssets.delete(f.id).catch(() => {}); f.id = r.id; touched = true; } catch {}
+      }
+    }
+    if (touched) m.updated = Date.now();
+  }
+}
+async function cloudSignOut() {
+  if (!cloud.client) return;
+  await cloudPush();
+  await cloud.client.auth.signOut().catch(() => {});
+  // The data lives in the cloud now; remove this browser's copy so the next person here can't see it.
+  try { localStorage.removeItem(LS_KEY); localStorage.removeItem(OWNER_KEY); } catch {}
+  S.decks = {}; S.matches = {}; S.settings = { id: 'main', field: [], rules: { ...RULES_DEFAULT } }; S.deleted = {};
+  cloud.user = null; cloud.name = ''; cloud.state = 'signedout'; cloud.msg = 'Signed out. Your data is safe in the cloud; this browser’s copy was removed.';
+  assets = localAssets; S.ui.deckId = null; S.form = null; ensureDeck(); render();
+}
+const cloudAssets = {
+  cloud: true,
+  async upload(blob, opts) {
+    const type = (opts && opts.type) || blob.type || 'application/octet-stream';
+    const ext = ({ 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif', 'video/mp4': 'mp4', 'video/webm': 'webm', 'application/pdf': 'pdf', 'application/json': 'json', 'text/plain': 'txt' })[type] || 'bin';
+    const path = `${cloud.user.id}/${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    const { error } = await cloud.client.storage.from('shots').upload(path, blob, { contentType: type, upsert: false });
+    if (error) throw { code: /size|large|exceed/i.test(error.message) ? 'too_large' : /quota|limit/i.test(error.message) ? 'quota_or_state' : 'upstream_error', message: error.message };
+    const id = 'sb:' + path, url = URL.createObjectURL(blob); assetURLs.set(id, url);
+    return { id, url, sizeBytes: blob.size, contentType: type };
+  },
+  async get(id) {
+    if (String(id).startsWith('loc')) return localAssets ? localAssets.get(id) : null;
+    if (!cloudOn()) return null;
+    const { data, error } = await cloud.client.storage.from('shots').download(String(id).slice(3));
+    if (error) throw error; return data;
+  },
+  async delete(id) {
+    if (String(id).startsWith('loc')) return localAssets ? localAssets.delete(id) : { deleted: false };
+    await cloud.client.storage.from('shots').remove([String(id).slice(3)]); assetURLs.delete(id); return { deleted: true };
+  },
+};
+// Re-pull when coming back to the tab, so a phone and a laptop stay in step.
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && cloudOn() && Date.now() - cloud.last > 30000) cloudPull(false); });
 
 // Browser file store (IndexedDB) for versions without Claude's file storage, e.g. GitHub Pages.
 // Same shape as the assets capability (upload/delete) plus get/put for backups.
@@ -553,20 +719,21 @@ const localAssets = (() => {
 })();
 const assetURLs = new Map();
 // Where an uploaded file is shown: Claude serves it at /_blob/<id>; the browser store needs an object URL, filled in after render.
+const isStoredHere = id => /^(loc|sb:)/.test(String(id));
 function assetAttr(id, attr = 'src') {
-  return assets && assets.local ? `data-asset="${esc(id)}" data-asset-attr="${attr}"` : `${attr}="/_blob/${esc(id)}"`;
+  return isStoredHere(id) ? `data-asset="${esc(id)}" data-asset-attr="${attr}"` : `${attr}="/_blob/${esc(id)}"`;
 }
+const getStored = id => String(id).startsWith('sb:') ? cloudAssets.get(id) : localAssets ? localAssets.get(id) : Promise.resolve(null);
 async function hydrateAssets() {
-  if (!assets || !assets.local) return;
   for (const el of document.querySelectorAll('[data-asset]:not([data-hyd])')) {
     el.setAttribute('data-hyd', '1');
     const id = el.dataset.asset, attr = el.dataset.assetAttr || 'src';
     let url = assetURLs.get(id);
-    if (!url) { const blob = await assets.get(id).catch(() => null); if (!blob) { el.closest('.shot-img, .shot')?.classList.add('missing'); continue; } url = URL.createObjectURL(blob); assetURLs.set(id, url); }
+    if (!url) { const blob = await getStored(id).catch(() => null); if (!blob) { el.closest('.shot-img, .shot')?.classList.add('missing'); continue; } url = URL.createObjectURL(blob); assetURLs.set(id, url); }
     el.setAttribute(attr, url);
   }
 }
-new MutationObserver(() => { if (assets && assets.local) hydrateAssets(); }).observe(document.documentElement, { childList: true, subtree: true });
+new MutationObserver(() => { if (document.querySelector('[data-asset]:not([data-hyd])')) hydrateAssets(); }).observe(document.documentElement, { childList: true, subtree: true });
 // Large screenshots are scaled to at most 1920px and saved as WebP to keep storage small.
 async function shrinkImage(file) {
   if (!/^image\/(png|jpeg|webp)$/.test(file.type) || !window.createImageBitmap) return file;
@@ -757,6 +924,7 @@ const timers = {}, chains = {}, ver = {}, dirty = new Set(), deleting = new Set(
 function getObj(coll, id) { return coll === 'decks' ? S.decks[id] : coll === 'matches' ? S.matches[id] : S.settings; }
 const bootQueue = new Map();
 function persist(coll, id, delay = 0) {
+  const o = getObj(coll, id); if (o) o.updated = Date.now();
   if (mode === 'local') { saveLocalSoon(); return; }
   if (mode === 'loading') { bootQueue.set(coll + '/' + id, [coll, id]); dirty.add(id); return; }
   const key = coll + '/' + id; dirty.add(id); ver[key] = (ver[key] || 0) + 1;
@@ -778,6 +946,7 @@ async function writeWithRetry(fn) {
 }
 function removeDoc(coll, id) {
   if (coll === 'decks') delete S.decks[id]; else delete S.matches[id];
+  (S.deleted = S.deleted || {})[id] = Date.now();
   if (mode !== 'db') { saveLocalSoon(); return; }
   deleting.add(id);
   const key = coll + '/' + id; clearTimeout(timers[key]); dirty.delete(id);
@@ -792,8 +961,8 @@ function dbError(e) {
   else toast('Save failed. Check your connection and try again.');
 }
 let localTimer;
-function saveLocalSoon() { clearTimeout(localTimer); localTimer = setTimeout(() => lsSet(LS_KEY, { decks: S.decks, matches: S.matches, settings: S.settings }), 250); }
-function loadLocal() { const d = lsGet(LS_KEY); if (d) { S.decks = d.decks || {}; Object.values(S.decks).forEach(migrateDeck); setTimeout(() => { if (migrateSettings()) saveLocalSoon(); }, 0); S.matches = d.matches || {}; S.settings = { id: 'main', field: [], rules: { ...RULES_DEFAULT }, ...(d.settings || {}) }; } }
+function saveLocalSoon(quiet) { clearTimeout(localTimer); localTimer = setTimeout(() => lsSet(LS_KEY, { decks: S.decks, matches: S.matches, settings: S.settings, deleted: S.deleted || {} }), 250); if (!quiet) cloudPushSoon(); }
+function loadLocal() { const d = lsGet(LS_KEY); if (d) { S.decks = d.decks || {}; Object.values(S.decks).forEach(migrateDeck); setTimeout(() => { if (migrateSettings()) saveLocalSoon(); }, 0); S.matches = d.matches || {}; S.deleted = d.deleted || {}; S.settings = { id: 'main', field: [], rules: { ...RULES_DEFAULT }, ...(d.settings || {}) }; } }
 
 const migrated = new Set();
 // Older decks listed the Chosen Champion inside the main deck too; it now has its own slot that counts toward the main deck.
@@ -842,6 +1011,7 @@ async function boot() {
     mode = 'local'; if (!assets && localAssets) assets = localAssets; loadLocal(); Object.assign(S.decks, pending.decks); Object.assign(S.matches, pending.matches);
     loaded.decks = loaded.matches = loaded.settings = true; dirty.clear();
     if (bootQueue.size) saveLocalSoon(); bootQueue.clear(); ensureDeck(); render();
+    cloudInit();
   }
 }
 function ensureDeck() {
@@ -876,8 +1046,42 @@ function statusHTML() {
   if (mode === 'local') return `<span class="dot local"></span><span>Saved in this browser only. Back up from the Data tab.</span>`;
   return `<span class="dot"></span><span>Connecting…</span>`;
 }
+function renderCloudChip() {
+  const b = document.getElementById('acct'); if (!b) return;
+  b.hidden = !cloud.enabled;
+  if (!cloud.enabled) return;
+  const st = { synced: 'ok', syncing: 'busy', pending: 'busy', error: 'bad' }[cloud.state] || '';
+  b.innerHTML = cloud.user ? `<span class="cdot ${st}"></span><span class="acct-name">${esc(cloud.name)}</span>` : 'Sign in';
+  b.title = cloud.user ? ({ synced: 'Saved to the cloud', syncing: 'Syncing…', pending: 'Changes waiting to sync', error: 'Sync problem: open Data for details' }[cloud.state] || 'Cloud saving') : 'Sign in to save to the cloud';
+  const status = document.getElementById('status');
+  if (cloud.user && status && mode === 'local') status.innerHTML = `<span class="dot ${cloud.state === 'error' ? 'local' : 'ok'}"></span><span>${cloud.state === 'error' ? 'Sync problem: see Data' : `Saved to the cloud as ${esc(cloud.name)}`}</span>`;
+}
+function cloudPanelHTML() {
+  if (!cloud.enabled) return '';
+  const ago = cloud.last ? Math.max(0, Math.round((Date.now() - cloud.last) / 60000)) : null;
+  const note = cloud.msg ? `<p class="cloud-msg ${cloud.state === 'error' ? 'bad' : ''}">${esc(cloud.msg)}</p>` : '';
+  if (cloud.user) return `<section class="panel" id="cloud-panel">
+    <div class="panel-head"><h2>Cloud saving</h2><span class="pill ${cloud.state === 'error' ? 'bad' : 'ok'}">${cloud.state === 'error' ? 'Sync problem' : cloud.state === 'synced' ? 'Synced' : 'Syncing…'}</span></div>
+    <p style="margin:0 0 10px">Signed in as <strong>${esc(cloud.name)}</strong>. Decks, matches, guides and screenshots sync to your account a couple of seconds after each change${ago != null ? ` · last synced ${ago ? ago + ' min ago' : 'just now'}` : ''}.</p>
+    ${note}
+    <div class="row"><button class="btn" data-act="cloud-sync">Sync now</button><button class="btn" data-act="cloud-out">Sign out</button></div>
+    <p class="small muted" style="margin:8px 0 0">Signing out removes this browser’s copy. Sign in again on any device to get it back.</p>
+  </section>`;
+  return `<section class="panel" id="cloud-panel">
+    <div class="panel-head"><h2>Cloud saving</h2><span class="small muted">Optional</span></div>
+    <p style="margin:0 0 12px;max-width:65ch">Sign in to keep your decks, matches and screenshots in your own account and use them on any device. Without an account everything stays in this browser.</p>
+    <form id="cloud-form" class="cloud-form" autocomplete="on">
+      <div class="field"><label class="label" for="cl-user">Username</label><input id="cl-user" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="24" placeholder="3–24 letters or numbers"></div>
+      <div class="field"><label class="label" for="cl-pass">Password</label><input id="cl-pass" name="password" type="password" autocomplete="current-password" minlength="8" placeholder="At least 8 characters"></div>
+      <div class="row"><button class="btn primary" type="submit" data-mode="in"${cloud.state === 'working' ? ' disabled' : ''}>Sign in</button><button class="btn" type="submit" data-mode="up"${cloud.state === 'working' ? ' disabled' : ''}>Create account</button></div>
+    </form>
+    ${note}
+    <p class="small muted" style="margin:10px 0 0;max-width:65ch">No email needed. There’s no password reset, so keep your password somewhere safe. When you sign in, anything already in this browser is added to your account.</p>
+  </section>`;
+}
 function renderChrome() {
   document.getElementById('status').innerHTML = statusHTML();
+  renderCloudChip();
   const sel = document.getElementById('deck-pick'); const l = deckList();
   sel.innerHTML = l.length ? l.map(d => `<option value="${esc(d.id)}"${d.id === S.ui.deckId ? ' selected' : ''}>${esc(d.name || 'Untitled deck')}</option>`).join('') : '<option value="">No decks yet</option>';
   sel.disabled = !l.length;
@@ -1754,9 +1958,10 @@ function viewData() {
   const R = rules();
   const nM = Object.keys(S.matches).length, nD = Object.keys(S.decks).length;
   return `
+  ${cloudPanelHTML()}
   <section class="panel">
     <div class="panel-head"><h2>Where your data lives</h2></div>
-    <p style="margin:0;max-width:65ch">${mode === 'db' ? 'Decks, matches and guides are saved to this page for your account. Only you and people you give Editor access can see or change them. Share the page as Editor with teammates to prep together.' : 'This version saves to this browser only, screenshots included. Clearing site data erases it, so export a backup before events; backups include your screenshots (not uploaded video files).'}</p>
+    <p style="margin:0;max-width:65ch">${mode === 'db' ? 'Decks, matches and guides are saved to this page for your account. Only you and people you give Editor access can see or change them. Share the page as Editor with teammates to prep together.' : (cloudOn() ? `Saved to your cloud account (${esc(cloud.name)}) and kept in this browser for offline use. Backups are still a good idea before events.` : 'This version saves to this browser only, screenshots included. Clearing site data erases it, so export a backup before events; backups include your screenshots (not uploaded video files).')}</p>
     <p class="small muted num" style="margin:8px 0 0">${nD} deck${nD === 1 ? '' : 's'} · ${nM} match${nM === 1 ? '' : 'es'}</p>
   </section>
   <section class="panel">
@@ -1804,11 +2009,11 @@ async function copyText(text, okMsg) {
 async function exportBackup() {
   const data = { app: 'riftbound-prep', version: 2, exported: new Date().toISOString(), decks: S.decks, matches: S.matches, settings: S.settings };
   // Screenshots stored in this browser go into the backup so they move with the matches.
-  if (assets && assets.local) {
-    const ids = [...new Set(Object.values(S.matches).flatMap(m => (m.shots || []).map(x => x.id)))];
+  if (mode === 'local') {
+    const ids = [...new Set(Object.values(S.matches).flatMap(m => (m.shots || []).map(x => x.id)))].filter(isStoredHere);
     if (ids.length) toast(`Packing ${ids.length} screenshot${ids.length > 1 ? 's' : ''}…`);
     data.files = {};
-    for (const id of ids) { const b = await assets.get(id).catch(() => null); if (b) data.files[id] = await blobToDataURL(b); }
+    for (const id of ids) { const b = await getStored(id).catch(() => null); if (b) data.files[id] = await blobToDataURL(b); }
   }
   offerFile(`riftbound-prep-${today()}.json`, JSON.stringify(data, null, 2), 'Backup copied to clipboard');
 }
@@ -2037,6 +2242,8 @@ document.addEventListener('click', e => {
     case 'cf-fits': S.ui.cf.fits = !S.ui.cf.fits; S.ui.cf.limit = 60; render(); break;
     case 'save-deck': saveDeck(); break;
     case 'report-close': S.ui.report = null; if (S.ui.tab === 'cards') refreshBuild(); else render(); break;
+    case 'cloud-sync': cloudPull(false); toast('Syncing…'); break;
+    case 'cloud-out': cloudSignOut(); break;
     case 'visual-toggle': S.ui.visual = !S.ui.visual; renderDeckCheck(); break;
     case 'clear-examples': {
       Object.values(S.decks).filter(x => x.example).forEach(x => removeDoc('decks', x.id));
@@ -2123,6 +2330,11 @@ document.addEventListener('change', e => {
 document.addEventListener('submit', e => {
   e.preventDefault();
   const f = e.target;
+  if (f.id === 'cloud-form') {
+    const kind = e.submitter && e.submitter.dataset.mode === 'up' ? 'up' : 'in';
+    cloudAuth(kind, document.getElementById('cl-user').value, document.getElementById('cl-pass').value);
+    return;
+  }
   if (f.id === 'match-form') saveForm();
   else if (f.id === 'quick-add') {
     const d = curDeck(), inp = document.getElementById('qa-name'), c = findCard(inp.value); if (!d) return;
