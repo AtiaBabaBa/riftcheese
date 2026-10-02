@@ -1,0 +1,18 @@
+{
+  "name": "Riftcheese",
+  "short_name": "Riftcheese",
+  "description": "Riftbound tournament prep: decks, match log, matchup win rates and sideboard guides.",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#10131A",
+  "theme_color": "#10131A",
+  "categories": ["games", "utilities"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

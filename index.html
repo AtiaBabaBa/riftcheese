@@ -259,6 +259,7 @@ td.r, th.r { text-align: right; }
 .issues li { display: flex; gap: 8px; align-items: baseline; font-size: 14px; }
 
 .banner { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 10px 14px; border-radius: var(--r); background: var(--warn-bg); color: var(--warn); font-weight: 600; font-size: 14px; }
+.banner.install { background: var(--accent-soft); color: var(--ink); }
 .empty { text-align: center; padding: 36px 16px; color: var(--muted); display: grid; gap: 10px; justify-items: center; }
 .empty h3 { color: var(--ink); font-size: 17px; }
 .confirm { display: inline-flex; gap: 6px; align-items: center; font-size: 13px; }
@@ -460,6 +461,15 @@ td.bfc.none { color: var(--muted); opacity: .5; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 </style>
 <style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#ECEFF3" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#10131A" media="(prefers-color-scheme: dark)">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Riftcheese">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<script>if ('serviceWorker' in navigator) addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));</script>
 <meta name="google-adsense-account" content="ca-pub-3505474961927285">
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3505474961927285" crossorigin="anonymous"></script>
 </head>
@@ -1187,6 +1197,7 @@ function render() {
   if (!S.form) S.form = blankForm();
   let html = '';
   if (hasExamples()) html += `<div class="banner"><span>You're looking at example data. Clear it when you're ready to add your own decks and matches.</span><span class="row">${S.ui.confirm === 'examples' ? `<span class="confirm">Delete all example data? <button class="btn sm danger" data-act="clear-examples">Delete</button><button class="btn sm" data-act="unconfirm">Keep</button></span>` : `<button class="btn sm" data-act="confirm" data-what="examples">Clear example data</button>`}</span></div>`;
+  html += installBannerHTML();
   const v = { log: viewLog, matchups: viewMatchups, sideboard: viewSideboard, field: viewField, decks: viewDecks, cards: viewCards, data: viewData, history: viewHistory }[S.ui.tab] || viewLog;
   html += v();
   app.innerHTML = html;
@@ -2058,6 +2069,7 @@ function viewData() {
   const nM = Object.keys(S.matches).length, nD = Object.keys(S.decks).length;
   return `
   ${cloudPanelHTML()}
+  ${installPanelHTML()}
   <section class="panel">
     <div class="panel-head"><h2>Where your data lives</h2></div>
     <p style="margin:0;max-width:65ch">${mode === 'db' ? 'Decks, matches and guides are saved to this page for your account. Only you and people you give Editor access can see or change them. Share the page as Editor with teammates to prep together.' : (cloudOn() ? `Saved to your cloud account (${esc(cloud.name)}) and kept in this browser for offline use. Backups are still a good idea before events.` : 'This version saves to this browser only, screenshots included. Clearing site data erases it, so export a backup before events; backups include your screenshots (not uploaded video files).')}</p>
@@ -2319,6 +2331,8 @@ document.addEventListener('click', e => {
     case 'card-add': { const c = CDB.byKey.get(b.dataset.k); if (!c) break; const msg = addCard(c, S.ui.addTo); if (msg) { toast(msg); if (c.t === 'Legend') { S.ui.cf.limit = 60; render(); } else refreshBuild(); } break; }
     case 'card-info': case 'card-open': openCard(b.dataset.k); break;
     case 'modal-close': closeCard(); break;
+    case 'install': installApp(); break;
+    case 'install-later': lsSet(INSTALL_KEY, true); render(); break;
     case 'row': rowOp(b.dataset.op, b.dataset.sec, b.dataset.n); if (b.dataset.op === 'unlegend' && S.ui.tab === 'cards') render(); break;
     case 'add-to': S.ui.addTo = b.dataset.v; document.querySelectorAll('[data-act="add-to"]').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.v === S.ui.addTo))); break;
     case 'cf-multi': { const f = S.ui.cf, k = b.dataset.k, v = b.dataset.v; f[k] = b.checked ? [...new Set([...f[k], v])] : f[k].filter(x => x !== v); syncFilters(); break; }
@@ -2446,6 +2460,49 @@ document.addEventListener('submit', e => {
     setTimeout(() => document.getElementById('fn-arch')?.focus(), 0);
   }
 });
+// ---------- install as an app ----------
+// Chrome, Edge and Samsung Internet hand us an install prompt (beforeinstallprompt). iPhone/iPad and other
+// browsers install from their own menus, so for those the button explains where to tap.
+const INSTALL_KEY = 'riftprep.installLater';
+const inst = { evt: null, ios: false, mobile: false, done: false };
+function installInit() {
+  if (window.claude) return;
+  const ua = navigator.userAgent;
+  inst.ios = /iPhone|iPad|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  inst.mobile = inst.ios || /Android|Mobi/i.test(ua);
+  inst.done = matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  addEventListener('beforeinstallprompt', e => { e.preventDefault(); inst.evt = e; render(); });
+  addEventListener('appinstalled', () => { inst.evt = null; inst.done = true; toast('Installed. Open Riftcheese from your home screen.'); render(); });
+}
+const canInstall = () => !window.claude && !inst.done && !!(inst.evt || inst.mobile);
+function installBannerHTML() {
+  if (!canInstall() || !inst.mobile || S.ui.tab === 'data' || lsGet(INSTALL_KEY)) return '';
+  return `<div class="banner install"><span>Install Riftcheese on your phone: it opens full screen like an app, even offline.</span><span class="row"><button class="btn sm primary" data-act="install">Install</button><button class="btn sm" data-act="install-later">Not now</button></span></div>`;
+}
+function installPanelHTML() {
+  if (!canInstall()) return '';
+  return `<section class="panel">
+    <div class="panel-head"><h2>Install the app</h2></div>
+    <p style="margin:0 0 12px;max-width:65ch">Add Riftcheese to your home screen to open it full screen like an app. It keeps working without a connection; card images you’ve already seen stay available offline. Your data is the same as here.</p>
+    <button class="btn primary" data-act="install">Install Riftcheese</button>
+  </section>`;
+}
+async function installApp() {
+  const e = inst.evt;
+  if (!e) { installHelp(); return; }
+  inst.evt = null; // a prompt can only be shown once
+  try { e.prompt(); const { outcome } = await e.userChoice; if (outcome !== 'accepted') render(); } catch { installHelp(); }
+}
+function installHelp() {
+  const steps = inst.ios
+    ? ['Tap the <strong>Share</strong> button (the square with an arrow). In Safari it can be under the <strong>•••</strong> button.', 'Scroll down and tap <strong>Add to Home Screen</strong>.', 'Turn on <strong>Open as Web App</strong> if you see it, then tap <strong>Add</strong>.']
+    : ['Open your browser’s menu (<strong>⋮</strong> or <strong>☰</strong>).', 'Tap <strong>Install app</strong> or <strong>Add to Home screen</strong> (in Samsung Internet: <strong>Add page to → Home screen</strong>).', 'Confirm with <strong>Install</strong> or <strong>Add</strong>.'];
+  S.ui.cardKey = null;
+  document.getElementById('modal-body').innerHTML = `<h2 id="modal-title" style="font-size:18px;margin:0 0 12px">Install Riftcheese</h2>
+    <ol style="margin:0;padding-left:20px;display:grid;gap:8px;max-width:48ch">${steps.map(s => `<li>${s}</li>`).join('')}</ol>
+    <p class="small muted" style="margin:14px 0 0">Riftcheese then appears on your home screen like any other app.</p>`;
+  const m = document.getElementById('modal'); m.hidden = false; m.querySelector('.modal-x').focus();
+}
 // ---------- footer + ads ----------
 function renderFoot() {
   document.getElementById('foot').innerHTML = `<span>Unofficial fan tool, not affiliated with Riot Games.</span>${window.claude ? '' : '<a href="privacy.html">Privacy</a><a href="https://github.com/AtiaBabaBa/riftcheese" target="_blank" rel="noopener">Source</a>'}`;
@@ -2467,6 +2524,7 @@ function adsInit() {
 }
 renderFoot();
 adsInit();
+installInit();
 boot();
 })();
 </script>

@@ -14,6 +14,15 @@ A tournament-prep tool for the Riftbound TCG: build decks from the full card dat
 - **Field** – expected match win rate for an event from the Legends you expect to face.
 - **Data** – JSON backup/import, CSV export of every match, format rules.
 
+## Install on a phone
+
+Riftcheese can be installed like an app on any phone (and on desktop Chrome or Edge). It then opens full screen from the home screen and keeps working without a connection.
+
+- **Android** (Chrome, Edge, Samsung Internet): tap **Install** in the banner or under *Data → Install the app*. In other browsers, open the browser menu and choose *Install app* or *Add to Home screen*.
+- **iPhone / iPad**: tap **Share** (in Safari it can be under the **•••** button), then **Add to Home Screen**. The Install button in the app shows these steps.
+
+The installed app uses the same data as the website in that browser. Offline, it opens from a cached copy; card images you've viewed before are cached too. Updates show up the next time it opens online.
+
 ## Where data is saved
 
 This GitHub Pages version saves everything **in your browser only**: decks and matches in localStorage, screenshots and uploaded replay files in IndexedDB (large screenshots are resized to 1920px). Use *Data → Export backup* regularly and *Import backup* to move to another browser or device. Backups include screenshots but not uploaded video files.
@@ -50,6 +59,7 @@ Ads never appear in the Claude artifact version. `privacy.html` explains the ads
 - `supabase/setup.sql` – database tables, file bucket and access rules for cloud saving.
 - `scripts/build_index.py` – regenerates `index.html` from the source (and `ads.txt` when ads are set up): `python scripts/build_index.py`.
 - `privacy.html` – privacy page linked from the footer.
+- `manifest.webmanifest`, `sw.js`, `icons/` – what makes the site installable: the app manifest, the service worker (offline cache) and home-screen icons. `python scripts/make_icons.py` redraws the icons.
 - `cards/` – card data (`cards.json`) and image sprite sheets.
 
 ## Credits
