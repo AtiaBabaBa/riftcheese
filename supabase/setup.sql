@@ -1,4 +1,4 @@
--- Riftbound Prep Book: cloud saving setup.
+-- Riftcheese: cloud saving setup.
 -- Run once in Supabase → SQL Editor → New query → paste → Run. Safe to run again.
 
 -- One row per account holding that account's decks, matches and settings.

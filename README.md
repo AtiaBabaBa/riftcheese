@@ -1,4 +1,4 @@
-# Riftbound Prep Book
+# Riftcheese
 
 A tournament-prep tool for the Riftbound TCG: build decks from the full card database, log best-of-3 matches, track matchup win rates, and plan sideboards.
 

@@ -1,6 +1,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Riftbound Prep Book</title>
+<title>Riftcheese</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 2 28 9v14l-12 7L4 23V9z' fill='%2310131A' stroke='%2346C3C7' stroke-width='2'/%3E%3Cpath d='M16 8v16M10 12l6 4 6-4M10 20l6-4 6 4' fill='none' stroke='%23D9A84C' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -462,7 +462,7 @@ td.bfc.none { color: var(--muted); opacity: .5; }
     <div class="top-row">
       <div class="brand">
         <svg width="30" height="30" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 2 28 9v14l-12 7L4 23V9z" fill="none" stroke="var(--accent)" stroke-width="2"/><path d="M16 8v16M10 12l6 4 6-4M10 20l6-4 6 4" fill="none" stroke="var(--gold)" stroke-width="1.6" stroke-linecap="round"/></svg>
-        <div><h1>Riftbound Prep Book</h1><div class="status" id="status"><span class="dot"></span><span>Connecting…</span></div></div>
+        <div><h1>Riftcheese</h1><div class="status" id="status"><span class="dot"></span><span>Connecting…</span></div></div>
       </div>
       <button id="acct" class="acct" data-act="tab" data-tab="data" hidden></button>
       <div class="deckpick"><label class="label" for="deck-pick">Deck</label><select id="deck-pick"></select></div>
@@ -567,6 +567,7 @@ function qtyIn(text, name) { const k = cardKey(name); const c = parseList(text).
 // Some Legend cards also carry the Champion supertype; only units can be a Chosen Champion.
 const isChampUnit = c => !!c && c.st === 'Champion' && c.t === 'Unit';
 const sectionFor = c => c.t === 'Rune' ? 'runes' : c.t === 'Battlefield' ? 'bf' : 'main';
+// Storage keys, the file store and the account email domain keep the site's first name (riftprep); renaming them would orphan saved data and accounts.
 const LS_KEY = 'riftprep.local.v1', UI_KEY = 'riftprep.ui.v1', OWNER_KEY = 'riftprep.owner.v1';
 
 // Cloud saving (accounts with username + password) runs on Supabase. Fill these in from
@@ -2106,7 +2107,7 @@ async function exportBackup() {
     data.files = {};
     for (const id of ids) { const b = await getStored(id).catch(() => null); if (b) data.files[id] = await blobToDataURL(b); }
   }
-  offerFile(`riftbound-prep-${today()}.json`, JSON.stringify(data, null, 2), 'Backup copied to clipboard');
+  offerFile(`riftcheese-${today()}.json`, JSON.stringify(data, null, 2), 'Backup copied to clipboard');
 }
 async function importBackup(j) {
   // Bring screenshots along: same ids in the browser store, new ids when uploading to Claude storage.
@@ -2307,7 +2308,7 @@ document.addEventListener('click', e => {
         const me = myLineup(m, S.decks[m.deckId]);
         return [m.date, m.event, m.round, S.decks[m.deckId]?.name || '', me.L, me.C, oppOf(m, false)?.legend || '', m.oppChamp || '', r.res, r.w, r.l, ...gv(g(0)), ...gv(g(1)), ...gv(g(2)),
           (m.replays || []).map(x => x.kind === 'link' ? x.url : x.name).join(' | '), m.notes].map(csvCell).join(','); });
-      offerFile(`riftbound-matches-${today()}.csv`, [head.join(','), ...rows].join('\n'), 'CSV copied to clipboard'); break; }
+      offerFile(`riftcheese-matches-${today()}.csv`, [head.join(','), ...rows].join('\n'), 'CSV copied to clipboard'); break; }
     case 'card-add': { const c = CDB.byKey.get(b.dataset.k); if (!c) break; const msg = addCard(c, S.ui.addTo); if (msg) { toast(msg); if (c.t === 'Legend') { S.ui.cf.limit = 60; render(); } else refreshBuild(); } break; }
     case 'card-info': case 'card-open': openCard(b.dataset.k); break;
     case 'modal-close': closeCard(); break;
@@ -2408,7 +2409,7 @@ document.addEventListener('change', e => {
       try {
         const j = JSON.parse(r.result); if (!j || typeof j !== 'object' || (!j.decks && !j.matches)) throw 0;
         importBackup(j);
-      } catch { toast('That file isn’t a Riftbound Prep Book backup.'); }
+      } catch { toast('That file isn’t a Riftcheese backup.'); }
     };
     r.readAsText(el.files[0]); el.value = '';
   }
@@ -2440,7 +2441,7 @@ document.addEventListener('submit', e => {
 });
 // ---------- footer + ads ----------
 function renderFoot() {
-  document.getElementById('foot').innerHTML = `<span>Unofficial fan tool, not affiliated with Riot Games.</span>${window.claude ? '' : '<a href="privacy.html">Privacy</a><a href="https://github.com/AtiaBabaBa/riftprep" target="_blank" rel="noopener">Source</a>'}`;
+  document.getElementById('foot').innerHTML = `<span>Unofficial fan tool, not affiliated with Riot Games.</span>${window.claude ? '' : '<a href="privacy.html">Privacy</a><a href="https://github.com/AtiaBabaBa/riftcheese" target="_blank" rel="noopener">Source</a>'}`;
 }
 function adsInit() {
   const { client, slot } = ADS_CONFIG, box = document.getElementById('ad');
