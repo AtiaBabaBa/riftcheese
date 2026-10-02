@@ -1,6 +1,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Riftbound Prep Book</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 2 28 9v14l-12 7L4 23V9z' fill='%2310131A' stroke='%2346C3C7' stroke-width='2'/%3E%3Cpath d='M16 8v16M10 12l6 4 6-4M10 20l6-4 6 4' fill='none' stroke='%23D9A84C' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Barlow:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
@@ -43,6 +44,7 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
 .top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--bg); border-bottom: 1px solid var(--line); }
 .top-row { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; padding-block: 12px 8px; }
 .brand { display: flex; align-items: center; gap: 10px; margin-right: auto; min-width: 0; }
+.brand > div { min-width: 0; }
 .brand svg { flex: none; }
 .brand h1 { font-family: var(--f-display); font-size: 20px; letter-spacing: .04em; font-weight: 700; }
 .status { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
@@ -56,7 +58,7 @@ h1, h2, h3 { text-wrap: balance; margin: 0; }
 .tab:hover { color: var(--ink); }
 .tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
 
-main { padding-block: 20px 64px; display: grid; gap: 20px; }
+main { padding-block: 20px 28px; display: grid; gap: 20px; }
 .panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); padding: 18px; min-width: 0; }
 .panel-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
 .panel h2 { font-size: 17px; font-weight: 700; }
@@ -324,7 +326,7 @@ button.pill { border: 0; cursor: pointer; }
 .build-bar { display: flex; gap: 10px 16px; align-items: center; flex-wrap: wrap; }
 .build-bar input { flex: 1; min-width: 200px; }
 .deckbar { display: none; }
-.acct { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line); background: var(--panel); border-radius: 999px; padding: 5px 12px; font-weight: 600; font-size: 13px; cursor: pointer; max-width: 170px; }
+.acct { display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--line); background: var(--panel); border-radius: 999px; padding: 5px 12px; font-weight: 600; font-size: 13px; cursor: pointer; max-width: 170px; white-space: nowrap; flex: none; }
 .acct:hover { border-color: var(--accent); }
 .acct-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cdot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex: none; }
@@ -367,6 +369,37 @@ button.pill { border: 0; cursor: pointer; }
 .vcard .sbt { position: absolute; left: 4px; top: 4px; background: var(--gold); color: var(--panel); border-radius: 4px; padding: 0 5px; font-size: 11px; font-weight: 700; }
 .crow .cimg.mini { width: 30px; }
 
+/* opponents (identified by Legend) */
+.opp-cell { display: flex; align-items: center; gap: 10px; min-width: 200px; }
+.opp-cell .pic { width: 34px; }
+.opp-cell .nm { font-weight: 700; overflow-wrap: break-word; min-width: 0; }
+.opp-cell .ch { display: block; font-size: 12.5px; color: var(--muted); font-weight: 400; }
+.opp-cell .nm .pill { display: flex; width: max-content; margin-top: 3px; font-weight: 600; }
+.legacy { font-size: 12.5px; color: var(--warn); }
+/* battlefield matrix: my battlefield (rows) against theirs (columns) */
+#bf-panel { scroll-margin-top: 120px; }
+.bfm-bar { display: flex; gap: 8px 12px; align-items: center; flex-wrap: wrap; margin-bottom: 12px; }
+.bfm-bar select { width: auto; max-width: 100%; }
+.bfm th, .bfm td { text-align: center; }
+.bfm th:first-child, .bfm td:first-child { text-align: left; }
+.bfm thead th { white-space: normal; min-width: 88px; vertical-align: bottom; text-transform: none; letter-spacing: 0; font-size: 12.5px; color: var(--ink); }
+.bfm thead th:first-child { color: var(--muted); font-size: 11.5px; text-transform: uppercase; letter-spacing: .07em; }
+.bfm td:first-child { font-weight: 600; min-width: 130px; }
+.bfm th:first-child, .bfm td:first-child { position: sticky; left: 0; z-index: 1; background: var(--panel); box-shadow: 1px 0 0 var(--line); }
+td.bfc { font-family: var(--f-mono); line-height: 1.25; padding: 7px 8px; }
+td.bfc b { display: block; font-size: 14px; font-weight: 600; }
+td.bfc span { font-size: 11.5px; color: var(--muted); }
+td.bfc.hi { background: var(--win-bg); } td.bfc.hi b { color: var(--win); }
+td.bfc.lo { background: var(--loss-bg); } td.bfc.lo b { color: var(--loss); }
+td.bfc.none { color: var(--muted); opacity: .5; }
+.bfm .tot { border-left: 2px solid var(--line); }
+.bfm tr.tot td { border-top: 2px solid var(--line); }
+/* ad slot + footer */
+.ad { margin: 0 0 20px; padding: 8px 12px 12px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); display: grid; gap: 6px; min-width: 0; overflow: hidden; }
+.ad-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 600; }
+.foot { display: flex; gap: 4px 14px; flex-wrap: wrap; justify-content: center; padding: 0 0 28px; font-size: 12.5px; color: var(--muted); text-align: center; }
+.foot a { color: var(--accent); }
+
 @media (max-width: 700px) {
   .top-row { flex-wrap: nowrap; gap: 10px; padding-block: 8px 4px; }
   .brand { gap: 8px; }
@@ -380,7 +413,7 @@ button.pill { border: 0; cursor: pointer; }
   .acct { padding: 4px 9px; max-width: 110px; }
   .deckpick select { max-width: 150px; padding-block: 5px; }
   .tab { padding: 6px 11px 8px; }
-  main { padding-block: 14px 72px; gap: 14px; }
+  main { padding-block: 14px 20px; gap: 14px; }
   .panel { padding: 14px; }
   .section-title { font-size: 19px; }
   .game-top { gap: 8px; }
@@ -419,6 +452,7 @@ button.pill { border: 0; cursor: pointer; }
   .lu > .label { grid-column: 1 / -1; }
   .lu-pics .pic { width: 50px; }
   .game-grid > .field:first-child { grid-column: 1 / -1; }
+  .foot { padding-bottom: 84px; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
 </style>
@@ -436,8 +470,7 @@ button.pill { border: 0; cursor: pointer; }
     <nav class="tabs" role="tablist" id="tabs"></nav>
   </div>
 </div>
-<div class="wrap"><main id="app"></main></div>
-<datalist id="arch-list"></datalist>
+<div class="wrap"><main id="app"></main><aside id="ad" class="ad" aria-label="Advertisement" hidden></aside><footer class="foot" id="foot"></footer></div>
 <datalist id="legend-list"></datalist>
 <datalist id="event-list"></datalist>
 <datalist id="champ-list"></datalist>
@@ -465,7 +498,7 @@ const BANS = {
 const SET_NAMES = { OGN: 'Origins', OGS: 'Proving Grounds', SFD: 'Spiritforged', UNL: 'Unleashed', VEN: 'Vendetta', OPP: 'OP Promo', PR: 'Promo', JDG: 'Judge' };
 
 // ---------- card database ----------
-const CDB = { ok: false, failed: false, cards: [], byKey: new Map(), sheets: [], imgBase: '', fetched: '' };
+const CDB = { ok: false, failed: false, cards: [], byKey: new Map(), sheets: [], imgBase: '', fetched: '', legends: [], legendAlias: new Map() };
 const cardKey = s => String(s || '').replace(/\s*\([^)]*\)\s*$/, '').replace(/,\s+/g, ' - ').trim().replace(/\s+/g, ' ').toLowerCase();
 const findCard = n => CDB.byKey.get(cardKey(n)) || null;
 async function loadCards() {
@@ -474,10 +507,28 @@ async function loadCards() {
     const j = await r.json();
     CDB.cards = j.cards; CDB.sheets = j.sheets; CDB.imgBase = j.imgBase; CDB.fetched = j.fetched;
     j.cards.forEach(c => CDB.byKey.set(c.k, c));
+    // Some Legends are listed twice, by title only ("Matriarch of War") and in full ("Ambessa - Matriarch of War"); treat them as one.
+    const all = j.cards.filter(c => c.t === 'Legend');
+    all.forEach(c => { const full = !c.k.includes(' - ') && all.find(x => x.k.endsWith(' - ' + c.k)); if (full) CDB.legendAlias.set(c.k, full); });
+    CDB.legends = all.filter(c => !CDB.legendAlias.has(c.k));
+    legendMemo.clear();
     CDB.ok = true;
   } catch { CDB.failed = true; }
   render();
 }
+// The Legend a typed name points to: an exact card name, or a champion name ("Kai'Sa", "Kai'Sa Control") that fits exactly one Legend.
+const legendMemo = new Map();
+function resolveLegend(text) {
+  const t = norm(text); if (!t || !CDB.ok) return null;
+  if (legendMemo.has(t)) return legendMemo.get(t);
+  const c = findCard(text);
+  let L = c && c.t === 'Legend' ? CDB.legendAlias.get(c.k) || c : null;
+  if (!L) { const hits = CDB.legends.filter(x => (x.g || []).some(tag => { const g = norm(tag); return t === g || t.startsWith(g + ' '); })); L = hits.length === 1 ? hits[0] : null; }
+  legendMemo.set(t, L); return L;
+}
+const legendName = t => { const L = resolveLegend(t); return L ? L.n : String(t || '').trim(); };
+const legendKey = t => norm(legendName(t));
+const champName = t => { const c = findCard(t); return c ? c.n : String(t || '').trim(); };
 function thumb(c, w, cls = '') {
   // w = 0: fill the container's width (sprite positioned in percentages so it scales).
   if (!w && c && c.im) {
@@ -529,10 +580,15 @@ const CLOUD_CONFIG = {
 const CLOUD_LIB = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.js';
 const USER_DOMAIN = 'users.riftprep.app'; // usernames become <name>@this-domain behind the scenes; no email is sent
 
+// Ads (Google AdSense) help pay for further development. Put your publisher id (ca-pub-…) in `client` and the id of a
+// display ad unit in `slot`, then run scripts/build_index.py, which also writes ads.txt. Empty `client` = no ads.
+// With only `client` filled in, AdSense Auto ads decide the placement instead. Ads never show in the Claude artifact.
+const ADS_CONFIG = { client: '', slot: '' };
+
 // ---------- state ----------
 const S = {
   decks: {}, matches: {}, settings: { id: 'main', field: [], rules: { ...RULES_DEFAULT } },
-  ui: { tab: 'log', hq: '', deckId: null, guideKey: null, statsScope: 'deck', logFilter: 'deck', confirm: null, pasteOpen: false, copy: null,
+  ui: { tab: 'log', hq: '', deckId: null, guideKey: null, statsScope: 'deck', logFilter: 'deck', confirm: null, pasteOpen: false, copy: null, showChamp: false, bfOpp: '',
     cf: { q: '', types: [], costs: [], sets: [], sort: 'name', doms: [], fits: true, limit: 60 }, cardKey: null, visual: false, addTo: 'main', drawer: false, cfList: [] },
   form: null,
 };
@@ -751,8 +807,8 @@ const loaded = { decks: false, matches: false, settings: false };
 
 const lsGet = k => { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch { return null; } };
 const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
-{ const u = lsGet(UI_KEY); if (u) Object.assign(S.ui, { tab: u.tab || 'log', deckId: u.deckId || null, statsScope: u.statsScope || 'deck', logFilter: u.logFilter || 'deck' }); }
-const saveUI = () => lsSet(UI_KEY, { tab: S.ui.tab, deckId: S.ui.deckId, statsScope: S.ui.statsScope, logFilter: S.ui.logFilter });
+{ const u = lsGet(UI_KEY); if (u) Object.assign(S.ui, { tab: u.tab || 'log', deckId: u.deckId || null, statsScope: u.statsScope || 'deck', logFilter: u.logFilter || 'deck', showChamp: !!u.showChamp, bfOpp: u.bfOpp || '' }); }
+const saveUI = () => lsSet(UI_KEY, { tab: S.ui.tab, deckId: S.ui.deckId, statsScope: S.ui.statsScope, logFilter: S.ui.logFilter, showChamp: S.ui.showChamp, bfOpp: S.ui.bfOpp });
 
 // ---------- helpers ----------
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -887,27 +943,39 @@ function aggregate(list) {
 function sortedMatches() {
   return Object.values(S.matches).sort((a, b) => (b.date || '').localeCompare(a.date || '') || (b.created || 0) - (a.created || 0));
 }
-function byArch(list) {
+// An opponent's deck is identified by their Legend, split by their Chosen Champion when that view is on.
+// Matches logged before the Legend field existed only have a typed deck name; it counts as the Legend it names, if any.
+function oppOf(m, withChamp = S.ui.showChamp) {
+  const L = resolveLegend(m.oppLegend) || (!(m.oppLegend || '').trim() && resolveLegend(m.opp)) || null;
+  const legend = L ? L.n : String(m.oppLegend || m.opp || '').trim();
+  if (!legend) return null;
+  const champ = withChamp ? champName(m.oppChamp) : '', lkey = norm(legend);
+  return { key: withChamp ? lkey + '|' + norm(champ) : lkey, lkey, legend, champ, withChamp, name: withChamp ? `${legend} · ${champ || 'champion not recorded'}` : legend };
+}
+function byArch(list, withChamp) {
   const groups = new Map();
   list.forEach(m => {
-    const k = norm(m.opp); if (!k) return;
-    if (!groups.has(k)) groups.set(k, { key: k, name: m.opp.trim(), list: [] });
-    groups.get(k).list.push(m);
+    const o = oppOf(m, withChamp); if (!o) return;
+    if (!groups.has(o.key)) groups.set(o.key, { ...o, list: [] });
+    groups.get(o.key).list.push(m);
   });
   return groups;
 }
 function curDeck() { return S.decks[S.ui.deckId] || null; }
 function deckList() { return Object.values(S.decks).sort((a, b) => (a.name || '').localeCompare(b.name || '')); }
+// Every opponent Legend the prep book knows about (field, match log, guides): legend key → display name.
 function archNames() {
-  const m = new Map();
-  (S.settings.field || []).forEach(f => f.arch && m.set(norm(f.arch), f.arch));
-  Object.values(S.matches).forEach(x => x.opp && !m.has(norm(x.opp)) && m.set(norm(x.opp), x.opp.trim()));
-  Object.values(S.decks).forEach(d => (d.guides || []).forEach(g => !m.has(g.key) && m.set(g.key, g.arch)));
+  const m = new Map(), put = t => { const n = legendName(t); if (n && !m.has(norm(n))) m.set(norm(n), n); };
+  (S.settings.field || []).forEach(f => put(f.arch));
+  Object.values(S.matches).forEach(x => { const o = oppOf(x, false); if (o) put(o.legend); });
+  Object.values(S.decks).forEach(d => (d.guides || []).forEach(g => put(g.arch || g.key)));
   return m;
 }
 function getGuide(d, key, arch, create) {
   d.guides = d.guides || [];
-  let g = d.guides.find(x => x.key === key);
+  // Guides written before opponents were tracked by Legend are keyed by the old deck name; find them through the Legend it names.
+  let g = d.guides.find(x => x.key === key) || d.guides.find(x => legendKey(x.arch || x.key) === key);
+  if (g && create && g.key !== key) { g.key = key; g.arch = arch || legendName(g.arch); }
   if (!g && create) { g = { key, arch: arch || key, ins: [], outs: [], plan: '', play: '', draw: '', watch: '' }; d.guides.push(g); }
   return g;
 }
@@ -1022,19 +1090,20 @@ function ensureDeck() {
 const blankGame = () => ({ r: '', first: '', ms: '', os: '', myBf: '', oppBf: '', ins: [], outs: [] });
 function blankForm(prev) {
   return {
-    editId: null, deckId: prev?.deckId || S.ui.deckId || '', opp: '', oppName: '', event: prev?.event || '',
+    editId: null, deckId: prev?.deckId || S.ui.deckId || '', legacyOpp: '', event: prev?.event || '',
     round: prev && /^\d+$/.test(prev.round || '') ? String(+prev.round + 1) : '', date: prev?.date || today(),
     games: [blankGame(), blankGame(), blankGame()], notes: '', replays: [], shots: [], oppLegend: '', oppChamp: '', myLegend: null, myChamp: null,
   };
 }
-const gameFromSaved = g => ({ ...blankGame(), ...(g || {}), ms: g?.ms ?? '', os: g?.os ?? '', ins: (g?.ins || []).map(x => ({ ...x })), outs: (g?.outs || []).map(x => ({ ...x })) });
-// A typed score settles an unmarked game once someone reaches the win target.
+const gameFromSaved = g => ({ ...blankGame(), ...(g || {}), ms: g?.ms ?? '', os: g?.os ?? '', myBf: g?.myBf || '', oppBf: g?.oppBf || '', ins: (g?.ins || []).map(x => ({ ...x })), outs: (g?.outs || []).map(x => ({ ...x })) });
+// A typed score settles an unmarked game once someone reaches the win target. A result set this way follows
+// later corrections to the score; one picked by hand is left alone.
 function autoResult(g) {
-  if (g.r) return false;
+  if (g.r && !g.auto) return false;
   const T = rules().winPoints || 8, m = g.ms === '' ? null : +g.ms, o = g.os === '' ? null : +g.os;
-  if (m != null && m >= T && (o == null || o < T)) { g.r = 'W'; return true; }
-  if (o != null && o >= T && (m == null || m < T)) { g.r = 'L'; return true; }
-  return false;
+  const r = m != null && m >= T && (o == null || o < T) ? 'W' : o != null && o >= T && (m == null || m < T) ? 'L' : '';
+  if (r === g.r) return false;
+  g.r = r; g.auto = !!r; return true;
 }
 const turnTag = g => g.first === 'me' ? '<span class="turn first">First</span>' : g.first === 'opp' ? '<span class="turn second">Second</span>' : '';
 const sbSummary = g => { const i = total(g.ins || []), o = total(g.outs || []); return i || o ? `+${i} / −${o}` : ''; };
@@ -1086,14 +1155,16 @@ function renderChrome() {
   sel.innerHTML = l.length ? l.map(d => `<option value="${esc(d.id)}"${d.id === S.ui.deckId ? ' selected' : ''}>${esc(d.name || 'Untitled deck')}</option>`).join('') : '<option value="">No decks yet</option>';
   sel.disabled = !l.length;
   document.getElementById('tabs').innerHTML = TABS.map(([k, n]) => `<button class="tab" role="tab" data-act="tab" data-tab="${k}" aria-selected="${S.ui.tab === k}">${n}</button>`).join('');
-  document.getElementById('arch-list').innerHTML = [...archNames().values()].map(a => `<option value="${esc(a)}">`).join('');
-  const legends = CDB.ok ? CDB.cards.filter(c => c.t === 'Legend').map(c => c.n) : LEGEND_SUGGEST;
-  document.getElementById('legend-list').innerHTML = legends.map(a => `<option value="${esc(a)}">`).join('');
+  const ll = document.getElementById('legend-list');
+  if (!ll.childElementCount || (CDB.ok && !ll.dataset.full)) {
+    ll.innerHTML = (CDB.ok ? CDB.legends.map(c => c.n) : LEGEND_SUGGEST).map(a => `<option value="${esc(a)}">`).join('');
+    if (CDB.ok) ll.dataset.full = '1';
+  }
   const L = legendOf(curDeck()), tag = L && (L.g || [])[0];
   document.getElementById('champ-list').innerHTML = CDB.cards.filter(c => isChampUnit(c) && (!tag || (c.g || []).includes(tag))).map(c => `<option value="${esc(c.n)}">`).join('');
   const cl = document.getElementById('card-list');
   if (CDB.ok && !cl.childElementCount) cl.innerHTML = CDB.cards.map(c => `<option value="${esc(c.n)}">`).join('');
-  const oL = S.form && findCard(S.form.oppLegend), oTag = oL && oL.t === 'Legend' && (oL.g || [])[0];
+  const oL = S.form && resolveLegend(S.form.oppLegend), oTag = oL && (oL.g || [])[0];
   document.getElementById('oppchamp-list').innerHTML = CDB.cards.filter(c => isChampUnit(c) && (!oTag || (c.g || []).includes(oTag))).map(c => `<option value="${esc(c.n)}">`).join('');
   const bl = document.getElementById('bf-list');
   if (CDB.ok && !bl.childElementCount) bl.innerHTML = CDB.cards.filter(c => c.t === 'Battlefield').map(c => `<option value="${esc(c.n)}">`).join('');
@@ -1138,18 +1209,18 @@ function pic(n, w, cls = '') {
 function myLineup(m, deck) {
   return { L: m && m.myLegend != null ? m.myLegend : (deck?.legend || ''), C: m && m.myChamp != null ? m.myChamp : (deck?.champion || '') };
 }
-// Pre-fill the opponent's Legend from the last match against this deck, or from a champion name in the deck's title.
-function guessOpp(f) {
-  if (f.oppLegend || !f.opp.trim()) return false;
-  const k = norm(f.opp), prev = sortedMatches().find(m => norm(m.opp) === k && m.oppLegend);
-  if (prev) { f.oppLegend = prev.oppLegend; if (!f.oppChamp) f.oppChamp = prev.oppChamp || ''; return true; }
-  if (!CDB.ok) return false;
-  const t = norm(f.opp), hits = CDB.cards.filter(c => c.t === 'Legend' && (c.g || []).some(tag => t.startsWith(norm(tag) + ' ') || t === norm(tag)));
-  if (hits.length === 1) { f.oppLegend = hits[0].n; return true; }
-  return false;
+// Once the opponent's Legend is typed: use the card's exact name, and pre-fill their Chosen Champion from the last match against that Legend.
+function settleOppLegend(f) {
+  const L = resolveLegend(f.oppLegend); if (!L) return;
+  f.oppLegend = L.n;
+  if (!f.oppChamp.trim()) { const prev = sortedMatches().find(m => m.id !== f.editId && m.oppChamp && legendKey(m.oppLegend || m.opp) === norm(L.n)); if (prev) f.oppChamp = champName(prev.oppChamp); }
 }
 function gameRowHTML(f, g, i, deck) {
   const myBfs = deck ? parseList(deck.bf).map(x => x.n) : [];
+  // Without battlefields in the deck list there is nothing to pick from, so type the name instead.
+  const myBfField = myBfs.length
+    ? `<select id="f-g${i}-mybf" data-bind="game" data-i="${i}" data-k="myBf"><option value="">—</option>${[...new Set([...myBfs, g.myBf].filter(Boolean))].map(n => `<option value="${esc(n)}"${n === g.myBf ? ' selected' : ''}>${esc(n)}</option>`).join('')}</select>`
+    : `<input id="f-g${i}-mybf" list="bf-list" value="${esc(g.myBf)}" data-bind="game" data-i="${i}" data-k="myBf" placeholder="Type to search">`;
   const open = S.ui.sbOpen === i;
   return `
     <div class="game">
@@ -1163,7 +1234,7 @@ function gameRowHTML(f, g, i, deck) {
         <div class="field"><span class="label">Score · me – opp</span>
           <span class="score"><input id="f-g${i}-ms" type="number" min="0" max="99" inputmode="numeric" value="${esc(g.ms)}" data-bind="game" data-i="${i}" data-k="ms" aria-label="Game ${i + 1} my points" placeholder="0"><span>–</span><input id="f-g${i}-os" type="number" min="0" max="99" inputmode="numeric" value="${esc(g.os)}" data-bind="game" data-i="${i}" data-k="os" aria-label="Game ${i + 1} opponent points" placeholder="0"></span></div>
         <div class="field"><label class="label" for="f-g${i}-mybf">My battlefield</label>
-          <select id="f-g${i}-mybf" data-bind="game" data-i="${i}" data-k="myBf"><option value="">—</option>${[...new Set([...myBfs, g.myBf].filter(Boolean))].map(n => `<option${n === g.myBf ? ' selected' : ''}>${esc(n)}</option>`).join('')}</select>
+          ${myBfField}
           ${g.myBf ? pic(g.myBf, 96, 'bfpic') : ''}</div>
         <div class="field"><label class="label" for="f-g${i}-oppbf">Their battlefield</label>
           <input id="f-g${i}-oppbf" list="bf-list" value="${esc(g.oppBf)}" data-bind="game" data-i="${i}" data-k="oppBf" placeholder="Type to search">
@@ -1216,11 +1287,11 @@ function swapMove(ins, outs, n, dir) {
 }
 function fsbEditorHTML(f, g, i, deck) {
   if (!deck) return '<p class="small muted">Pick your deck first.</p>';
-  const guide = f.opp.trim() && getGuide(deck, norm(f.opp));
+  const guide = f.oppLegend.trim() && getGuide(deck, legendKey(f.oppLegend));
   const ti = total(g.ins), to = total(g.outs);
   return `<div class="fsb">
     <div class="row">
-      ${guide && ((guide.ins || []).length || (guide.outs || []).length) ? `<button type="button" class="btn sm" data-act="fsb-guide" data-i="${i}">Use my guide vs ${esc(guide.arch)}</button>` : `<span class="small muted">No sideboard guide for this opponent yet.</span>`}
+      ${guide && ((guide.ins || []).length || (guide.outs || []).length) ? `<button type="button" class="btn sm" data-act="fsb-guide" data-i="${i}">Use my guide vs ${esc(legendName(guide.arch))}</button>` : `<span class="small muted">No sideboard guide for this opponent yet.</span>`}
       ${i > 0 ? `<button type="button" class="btn sm" data-act="fsb-copy" data-i="${i}">Same as game ${i}</button>` : ''}
       ${ti || to ? `<button type="button" class="btn sm link" data-act="fsb-clear" data-i="${i}">Clear</button>` : ''}
     </div>
@@ -1265,6 +1336,7 @@ function lineupFormHTML(f, deck) {
       <div class="lu-names">
         <input id="f-opplegend" list="legend-list" placeholder="Their Legend" value="${esc(f.oppLegend)}" data-bind="form" data-k="oppLegend" aria-label="Opponent Legend">
         <input id="f-oppchamp" list="oppchamp-list" placeholder="Their Chosen Champion" value="${esc(f.oppChamp)}" data-bind="form" data-k="oppChamp" aria-label="Opponent Chosen Champion">
+        ${f.legacyOpp && !f.oppLegend.trim() ? `<span class="legacy">Logged before as “${esc(f.legacyOpp)}”. Pick their Legend to save.</span>` : ''}
       </div>
     </div>
   </div>`;
@@ -1281,10 +1353,6 @@ function viewLog() {
     <form id="match-form" class="grid" style="grid-template-columns:1fr" autocomplete="off">
       <div class="field"><label class="label" for="f-deck">My deck</label>
         <select id="f-deck" data-bind="form" data-k="deckId">${l.length ? l.map(d => `<option value="${esc(d.id)}"${d.id === f.deckId ? ' selected' : ''}>${esc(d.name || 'Untitled deck')}</option>`).join('') : '<option value="">No decks yet</option>'}</select>${l.length ? '' : '<button type="button" class="btn sm" data-act="new-deck" style="justify-self:start">New deck</button>'}</div>
-      <div class="grid">
-        <div class="field"><label class="label" for="f-opp">Opponent deck</label><input id="f-opp" list="arch-list" placeholder="e.g. Kai'Sa Control" value="${esc(f.opp)}" data-bind="form" data-k="opp"></div>
-        <div class="field"><label class="label" for="f-oppname">Opponent (optional)</label><input id="f-oppname" placeholder="Player name" value="${esc(f.oppName)}" data-bind="form" data-k="oppName"></div>
-      </div>
       ${lineupFormHTML(f, deck)}
       <div class="evrow">
         <div class="field"><label class="label" for="f-event">Event</label><input id="f-event" list="event-list" placeholder="Nexus Night, RQ…" value="${esc(f.event)}" data-bind="form" data-k="event"></div>
@@ -1310,9 +1378,11 @@ function historyMatches() {
   let list = sortedMatches();
   if (S.ui.logFilter === 'deck' && S.ui.deckId) list = list.filter(m => m.deckId === S.ui.deckId);
   const q = norm(S.ui.hq);
-  if (q) list = list.filter(m => [m.opp, m.oppName, m.event, m.notes, m.oppLegend, m.oppChamp].some(x => norm(x).includes(q)));
+  if (q) list = list.filter(m => [oppOf(m, false)?.legend, m.oppChamp, m.event, m.notes, ...(m.games || []).flatMap(g => [g.myBf, g.oppBf])].some(x => norm(x).includes(q)));
   return list;
 }
+const champToggle = () => `<button class="dom-toggle" data-act="champ-toggle" aria-pressed="${S.ui.showChamp}" title="Show the Chosen Champion next to each Legend">Chosen Champions</button>`;
+const safeURL = u => /^https?:\/\//i.test(String(u || '')) ? u : '#';
 function historyListHTML() {
   const list = historyMatches(), a = aggregate(list);
   const rows = list.map(m => {
@@ -1331,17 +1401,17 @@ function historyListHTML() {
         </div>` : '';
       return bits.length || g.first ? `<div class="gd"><span class="g ${g.r}">${g.r}</span><span class="small muted">G${i + 1}</span>${turnTag(g)}${bits.length ? '<span class="sep">·</span>' : ''}${bits.join('<span class="sep">·</span>')}</div>${panel}` : '';
     }).join('');
-    const me = myLineup(m, d);
-    const lineup = me.L || me.C || m.oppLegend || m.oppChamp
-      ? `<div class="details"><div class="mlineup">${pic(me.L, 40)}${pic(me.C, 40)}<span class="lu-vs">vs</span>${pic(m.oppLegend, 40)}${pic(m.oppChamp, 40)}</div></div>` : '';
+    const me = myLineup(m, d), o = oppOf(m, false), ch = S.ui.showChamp;
+    const lineup = me.L || o
+      ? `<div class="details"><div class="mlineup">${pic(me.L, 40)}${ch ? pic(me.C, 40) : ''}<span class="lu-vs">vs</span>${pic(o && o.legend, 40)}${ch ? pic(m.oppChamp, 40) : ''}</div></div>` : '';
     const reps = (m.replays || []).map((rp, j) => rp.kind === 'file'
       ? (isVideo(rp) ? `<button class="btn sm" data-act="rp-watch" data-id="${esc(m.id)}" data-j="${j}">${S.ui.watch === m.id + ':' + j ? 'Hide' : 'Watch'} ${esc(rp.name || 'replay')}</button>`
         : `<a class="btn sm" ${assetAttr(rp.id, 'href')} target="_blank" rel="noopener">${esc(rp.name || 'Replay file')}</a>`)
-      : `<a class="btn sm" href="${esc(rp.url)}" target="_blank" rel="noopener">${esc(rp.label || 'Replay link')}</a>`).join('');
+      : `<a class="btn sm" href="${esc(safeURL(rp.url))}" target="_blank" rel="noopener">${esc(rp.label || 'Replay link')}</a>`).join('');
     const watching = (m.replays || []).map((rp, j) => S.ui.watch === m.id + ':' + j && rp.kind === 'file' ? `<video class="replay-video" controls preload="metadata" ${assetAttr(rp.id)}></video>` : '').join('');
     return `<div class="mrow">
       <div class="date small num muted">${esc(m.date || '')}</div>
-      <div style="min-width:0"><div class="opp">vs ${esc(m.opp || 'Unknown')}${m.oppName ? ` <span class="muted" style="font-weight:400">· ${esc(m.oppName)}</span>` : ''}</div>
+      <div style="min-width:0"><div class="opp">vs ${esc(o ? o.legend : 'Unknown Legend')}${ch && m.oppChamp ? ` <span class="muted" style="font-weight:400">· ${esc(champName(m.oppChamp))}</span>` : ''}</div>
         <div class="meta">${esc(d ? d.name : 'Deleted deck')}${m.event ? ' · ' + esc(m.event) : ''}${m.round ? ' · R' + esc(m.round) : ''}</div></div>
       <div class="gs" aria-label="Games">${played.map(({ g, i }) => `<span class="g ${g.r}" title="Game ${i + 1}: ${g.r}${g.first ? (g.first === 'me' ? ', I went first' : ', opponent went first') : ''}">${g.r}</span>`).join('')}
         ${rr.res ? `<span class="pill ${rr.res}" style="margin-left:6px">${rr.w}–${rr.l}${rr.d ? '–' + rr.d : ''}</span>` : ''}</div>
@@ -1364,8 +1434,9 @@ function viewHistory() {
     <div class="panel-head">
       <h2 class="section-title">Match history</h2>
       <div class="row">
-        <input id="h-q" type="search" placeholder="Search opponent, player, event or notes" value="${esc(S.ui.hq)}" data-bind="hist" autocomplete="off" style="width:min(320px,100%)">
+        <input id="h-q" type="search" placeholder="Search Legend, battlefield, event or notes" value="${esc(S.ui.hq)}" data-bind="hist" autocomplete="off" style="width:min(320px,100%)">
         <span class="seg" role="group" aria-label="Filter"><button class="N" data-act="log-filter" data-v="deck" aria-pressed="${S.ui.logFilter === 'deck'}">This deck</button><button class="N" data-act="log-filter" data-v="all" aria-pressed="${S.ui.logFilter === 'all'}">All decks</button></span>
+        ${champToggle()}
       </div>
     </div>
     <div id="hist-list">${historyListHTML()}</div>
@@ -1383,9 +1454,9 @@ function viewMatchups() {
   const d = curDeck();
   const tile = (label, p, sub) => `<div class="tile"><span class="label">${label}</span><span class="v">${fmtPct(p)}</span><span class="s num">${sub}</span></div>`;
   const rows = groups.map(g => {
-    const gs = d && !all ? guideState(d, getGuide(d, g.key)) : null;
+    const gs = d && !all ? guideState(d, getGuide(d, g.lkey)) : null;
     return `<tr>
-      <td><strong>${esc(g.name)}</strong>${g.n < 5 ? ' <span class="pill N" title="Fewer than 5 matches">small sample</span>' : ''}</td>
+      <td><div class="opp-cell">${pic(g.legend, 34)}${g.withChamp ? pic(g.champ, 34) : ''}<span class="nm">${esc(g.legend)}${g.withChamp ? `<span class="ch">${esc(g.champ || 'Champion not recorded')}</span>` : ''}${g.n < 5 ? '<span class="pill N" title="Fewer than 5 matches">small sample</span>' : ''}</span></div></td>
       <td class="num">${rec(g.a.m)}</td>
       <td>${wrCell(pct(g.a.m), g.n)}</td>
       <td class="num">${g.a.g.W}–${g.a.g.L}</td>
@@ -1393,7 +1464,7 @@ function viewMatchups() {
       <td>${wrCell(pct(g.a.post))}</td>
       <td class="num">${fmtPct(pct(g.a.play))}</td>
       <td class="num">${fmtPct(pct(g.a.draw))}</td>
-      ${all ? '' : `<td><button class="btn sm" data-act="open-guide" data-key="${esc(g.key)}" data-arch="${esc(g.name)}">${gs === 'done' ? 'Guide ✓' : gs === 'bad' ? 'Guide (unbalanced)' : 'Write guide'}</button></td>`}
+      <td><div class="row" style="flex-wrap:nowrap"><button class="btn sm" data-act="bf-show" data-key="${esc(g.key)}">Battlefields</button>${all ? '' : `<button class="btn sm" data-act="open-guide" data-key="${esc(g.lkey)}">${gs === 'done' ? 'Guide ✓' : gs === 'bad' ? 'Guide (unbalanced)' : 'Write guide'}</button>`}</div></td>
     </tr>`;
   }).join('');
   return `
@@ -1412,32 +1483,52 @@ function viewMatchups() {
     </div>
   </section>
   <section class="panel">
-    <div class="panel-head"><h2>By opponent deck</h2><span class="small muted">Win rates count wins and losses; draws are left out. The line on each bar marks 50%.</span></div>
+    <div class="panel-head"><h2>By opponent Legend</h2><span class="row"><span class="small muted">Win rates count wins and losses; draws are left out. The line on each bar marks 50%.</span>${champToggle()}</span></div>
     ${groups.length ? `<div class="scroll"><table>
-      <thead><tr><th>Opponent deck</th><th>Matches</th><th>Match win</th><th>Games</th><th>Game 1</th><th>Post-board</th><th>First</th><th>Second</th>${all ? '' : '<th>Sideboard</th>'}</tr></thead>
+      <thead><tr><th>Opponent</th><th>Matches</th><th>Match win</th><th>Games</th><th>Game 1</th><th>Post-board</th><th>First</th><th>Second</th><th></th></tr></thead>
       <tbody>${rows}</tbody></table></div>`
-    : `<div class="empty"><h3>No matchups yet</h3><p>Record matches in the Match log tab and they'll group here by opponent deck.</p><button class="btn" data-act="tab" data-tab="log">Go to match log</button></div>`}
+    : `<div class="empty"><h3>No matchups yet</h3><p>Record matches in the Match log tab and they'll group here by your opponent's Legend.</p><button class="btn" data-act="tab" data-tab="log">Go to match log</button></div>`}
   </section>
-  ${bfTableHTML(list)}`;
+  ${bfMatrixHTML(list, groups)}`;
 }
 
-function bfTableHTML(list) {
-  const by = new Map();
-  list.forEach(m => (m.games || []).forEach(g => {
-    if (!g.myBf || (g.r !== 'W' && g.r !== 'L')) return;
-    const e = by.get(g.myBf) || { W: 0, L: 0 }; e[g.r]++; by.set(g.myBf, e);
+// Game win rate for each of my battlefields against each of theirs, for every matchup or one Legend.
+const bfName = n => { const c = n && findCard(n); return c && c.t === 'Battlefield' ? c.n : String(n || '').trim(); };
+function bfMatrixHTML(list, groups) {
+  const sel = groups.find(g => g.key === S.ui.bfOpp) || groups.find(g => g.key === String(S.ui.bfOpp || '').split('|')[0]) || null;
+  const cells = new Map(), mine = new Map(), theirs = new Map(), sum = { W: 0, L: 0 };
+  let none = 0;
+  const add = (map, k, r) => { const e = map.get(k) || { W: 0, L: 0 }; e[r]++; map.set(k, e); };
+  (sel ? sel.list : list).forEach(m => (m.games || []).forEach(g => {
+    if (g.r !== 'W' && g.r !== 'L') return;
+    const a = bfName(g.myBf), b = bfName(g.oppBf);
+    if (!a && !b) { none++; return; }
+    sum[g.r]++; if (a) add(mine, a, g.r); if (b) add(theirs, b, g.r); if (a && b) add(cells, a + '\n' + b, g.r);
   }));
-  if (!by.size) return '';
-  const rows = [...by.entries()].sort((a, b) => (b[1].W + b[1].L) - (a[1].W + a[1].L)).map(([n, a]) => `<tr><td><strong>${esc(n)}</strong></td><td class="num">${a.W}–${a.L}</td><td>${wrCell(pct(a))}</td></tr>`).join('');
-  return `<section class="panel"><div class="panel-head"><h2>By my battlefield</h2><span class="small muted">Game win rate on each battlefield you picked</span></div>
-    <div class="scroll"><table><thead><tr><th>Battlefield</th><th>Games</th><th>Game win</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
+  const order = map => [...map.entries()].sort((x, y) => (y[1].W + y[1].L) - (x[1].W + x[1].L) || x[0].localeCompare(y[0])).map(e => e[0]);
+  const rowsK = order(mine), colsK = order(theirs);
+  const cell = (a, cls = '') => {
+    const p = a ? pct(a) : null;
+    return p == null ? `<td class="bfc none ${cls}">·</td>` : `<td class="bfc ${p >= 0.55 ? 'hi' : p <= 0.45 ? 'lo' : ''} ${cls}" title="${a.W} won, ${a.L} lost"><b>${fmtPct(p)}</b><span>${a.W}–${a.L}</span></td>`;
+  };
+  const picker = `<div class="bfm-bar"><label class="label" for="bf-opp">Matchup</label>
+    <select id="bf-opp"><option value="">All opponents</option>${groups.map(g => `<option value="${esc(g.key)}"${sel && sel.key === g.key ? ' selected' : ''}>${esc(g.name)} (${g.n})</option>`).join('')}</select>
+    ${none ? `<span class="small muted">${none} game${none > 1 ? 's' : ''} without battlefields recorded ${none > 1 ? 'aren’t' : 'isn’t'} counted.</span>` : ''}</div>`;
+  const body = rowsK.length || colsK.length ? `<div class="scroll"><table class="bfm">
+      <thead><tr><th>Mine ↓ · theirs →</th>${colsK.map(b => `<th>${esc(b)}</th>`).join('')}<th class="tot">All of theirs</th></tr></thead>
+      <tbody>${rowsK.map(a => `<tr><td>${esc(a)}</td>${colsK.map(b => cell(cells.get(a + '\n' + b))).join('')}${cell(mine.get(a), 'tot')}</tr>`).join('')}
+        <tr class="tot"><td>All of mine</td>${colsK.map(b => cell(theirs.get(b))).join('')}${cell(sum, 'tot')}</tr></tbody>
+    </table></div>
+    <p class="small muted" style="margin:10px 0 0">Each cell is your game win rate with your battlefield (row) against theirs (column). Totals also count games where only one side’s battlefield was recorded.</p>`
+    : `<div class="empty"><h3>No battlefields recorded${sel ? ' for this matchup' : ''}</h3><p>In the match log, pick your battlefield and theirs for each game to see which ones win here.</p></div>`;
+  return `<section class="panel" id="bf-panel"><div class="panel-head"><h2>Battlefields</h2><span class="small muted">Your battlefield against theirs, game by game</span></div>${picker}${body}</section>`;
 }
 
 // --- Sideboard
 function viewSideboard() {
   const d = curDeck();
   if (!d) return noDeckEmpty('Sideboard guides belong to a deck.');
-  const names = archNames(), mine = Object.values(S.matches).filter(m => m.deckId === d.id), groups = byArch(mine);
+  const names = archNames(), mine = Object.values(S.matches).filter(m => m.deckId === d.id), groups = byArch(mine, false);
   const keys = [...names.keys()];
   if (!S.ui.guideKey || !names.has(S.ui.guideKey)) S.ui.guideKey = keys[0] || null;
   const list = keys.map(k => {
@@ -1478,7 +1569,7 @@ function viewSideboard() {
       </div>
     </section>`;
   } else {
-    editor = `<section class="panel"><div class="empty"><h3>No opponent decks yet</h3><p>Add the decks you expect to face on the left, or list them in the Field tab. Opponents from your match log show up here automatically.</p></div></section>`;
+    editor = `<section class="panel"><div class="empty"><h3>No opponents yet</h3><p>Add the Legends you expect to face on the left, or list them in the Field tab. Opponents from your match log show up here automatically.</p></div></section>`;
   }
   const sheet = cheatSheet(d);
   return `
@@ -1486,7 +1577,7 @@ function viewSideboard() {
     <aside class="panel" style="padding:12px">
       <div class="label" style="padding:4px 8px 8px">Matchups</div>
       <div class="mlist">${list}</div>
-      <form id="add-arch" class="row" style="margin-top:10px;flex-wrap:nowrap" autocomplete="off"><input id="new-arch" list="arch-list" placeholder="Add opponent deck"><button class="btn sm" type="submit">Add</button></form>
+      <form id="add-arch" class="row" style="margin-top:10px;flex-wrap:nowrap" autocomplete="off"><input id="new-arch" list="legend-list" placeholder="Add opponent Legend"><button class="btn sm" type="submit">Add</button></form>
     </aside>
     <div style="display:grid;gap:20px;min-width:0">
       ${editor}
@@ -1502,7 +1593,7 @@ function cheatSheet(d) {
   const gs = (d.guides || []).filter(g => (g.ins || []).length || (g.outs || []).length || g.plan || g.play || g.draw || g.watch);
   if (!gs.length) return '';
   const lines = [`${d.name || 'Deck'} · sideboard guide`, ''];
-  gs.sort((a, b) => a.arch.localeCompare(b.arch)).forEach(g => {
+  gs.map(g => ({ ...g, arch: legendName(g.arch || g.key) })).sort((a, b) => a.arch.localeCompare(b.arch)).forEach(g => {
     lines.push(`vs ${g.arch}`);
     if ((g.ins || []).length) lines.push('  IN   ' + g.ins.map(x => `+${x.q} ${x.n}`).join(', '));
     if ((g.outs || []).length) lines.push('  OUT  ' + g.outs.map(x => `-${x.q} ${x.n}`).join(', '));
@@ -1522,39 +1613,39 @@ function copyBox() {
 function viewField() {
   const d = curDeck(), field = S.settings.field || [];
   const mine = d ? Object.values(S.matches).filter(m => m.deckId === d.id) : [];
-  const groups = byArch(mine);
+  const groups = byArch(mine, false);
   let sumShare = 0, sumW = 0, known = 0;
   const rows = field.map((f, i) => {
-    const g = groups.get(norm(f.arch)), a = g ? aggregate(g.list) : null, p = a ? pct(a.m) : null;
+    const g = groups.get(legendKey(f.arch)), a = g ? aggregate(g.list) : null, p = a ? pct(a.m) : null;
     const share = +f.share || 0; sumShare += share; sumW += share * (p == null ? 0.5 : p); if (p != null) known += share;
     return `<tr>
-      <td><input id="fa-${i}" value="${esc(f.arch)}" data-bind="field" data-i="${i}" data-k="arch" aria-label="Opponent deck" style="min-width:160px"></td>
+      <td><div class="opp-cell">${pic(legendName(f.arch), 30)}<input id="fa-${i}" list="legend-list" value="${esc(legendName(f.arch))}" data-bind="field" data-i="${i}" data-k="arch" aria-label="Opponent Legend" style="min-width:160px"></div></td>
       <td class="r"><input id="fs-${i}" type="number" min="0" max="100" step="1" value="${esc(f.share)}" data-bind="field" data-i="${i}" data-k="share" aria-label="Expected share" style="width:80px;text-align:right"></td>
       <td>${wrCell(p)}</td>
       <td class="num muted">${a ? rec(a.m) : '—'}</td>
       <td><button class="btn sm link danger" data-act="field-del" data-i="${i}">Remove</button></td></tr>`;
   }).join('');
   const exp = sumShare ? sumW / sumShare : null;
-  const inField = new Set(field.map(f => norm(f.arch)));
-  const seen = [...byArch(Object.values(S.matches)).values()].filter(g => !inField.has(g.key));
+  const inField = new Set(field.map(f => legendKey(f.arch)));
+  const seen = [...byArch(Object.values(S.matches), false).values()].filter(g => !inField.has(g.key));
   return `
   <section class="panel">
     <div class="panel-head">
       <div><div class="label">Tournament prep</div><h2 class="section-title">Expected field</h2></div>
       ${d ? `<span class="small muted">Win rates shown for <strong>${esc(d.name || 'Untitled deck')}</strong></span>` : ''}
     </div>
-    <p class="muted" style="margin:0 0 14px;max-width:65ch">List the decks you expect at the event and roughly what share of the room each will be. Your logged results against each one give an expected match win rate for the whole event. Decks with no results count as 50%.</p>
+    <p class="muted" style="margin:0 0 14px;max-width:65ch">List the Legends you expect at the event and roughly what share of the room each will be. Your logged results against each one give an expected match win rate for the whole event. Legends with no results count as 50%.</p>
     <div class="tiles" style="margin-bottom:16px">
       <div class="tile"><span class="label">Expected match win rate</span><span class="v">${fmtPct(exp)}</span><span class="s">${d ? 'weighted by field share' : 'pick a deck'}</span></div>
       <div class="tile"><span class="label">Field covered by data</span><span class="v">${sumShare ? Math.round(known / sumShare * 100) + '%' : '—'}</span><span class="s">of the share you listed</span></div>
       <div class="tile"><span class="label">Shares listed</span><span class="v">${Math.round(sumShare)}%</span><span class="s">${Math.round(sumShare) === 100 ? 'adds up to 100%' : sumShare ? 'normalized to 100%' : 'none yet'}</span></div>
     </div>
     <div class="scroll"><table>
-      <thead><tr><th>Opponent deck</th><th class="r">Share %</th><th>Your match win rate</th><th>Record</th><th></th></tr></thead>
-      <tbody>${rows || `<tr><td colspan="5" class="muted">No decks in the field yet. Add the first one below.</td></tr>`}</tbody>
+      <thead><tr><th>Opponent Legend</th><th class="r">Share %</th><th>Your match win rate</th><th>Record</th><th></th></tr></thead>
+      <tbody>${rows || `<tr><td colspan="5" class="muted">No Legends in the field yet. Add the first one below.</td></tr>`}</tbody>
     </table></div>
     <form id="field-add" class="row" style="margin-top:12px" autocomplete="off">
-      <input id="fn-arch" list="arch-list" placeholder="Opponent deck" style="flex:2;min-width:160px">
+      <input id="fn-arch" list="legend-list" placeholder="Opponent Legend" style="flex:2;min-width:160px">
       <input id="fn-share" type="number" min="0" max="100" placeholder="Share %" style="flex:1;min-width:90px">
       <button class="btn primary" type="submit">Add to field</button>
     </form>
@@ -1947,10 +2038,10 @@ function viewCards() {
   </div>
   <button class="deckbar" id="deckbar" data-act="drawer">${deckbarHTML()}</button>`;
 }
-// The standard one-line export, the same format Paste deck list reads.
+// The standard deck list export (each heading and card on its own line, as RiftAtlas expects). Paste deck list reads it back.
 function deckText(d) {
-  const sec = (n, t) => { const l = parseList(t); return l.length ? `${n}: ${l.map(c => `${c.q} ${c.n}`).join(' ')}` : ''; };
-  return [d.legend ? `Legend: 1 ${d.legend}` : '', d.champion ? `Champion: 1 ${d.champion}` : '', sec('MainDeck', d.main), sec('Battlefields', d.bf), sec('Runes', d.runes), sec('Sideboard', d.side)].filter(Boolean).join(' ');
+  const sec = (n, t) => { const l = parseList(t); return l.length ? `${n}:\n${l.map(c => `${c.q} ${c.n}`).join('\n')}` : ''; };
+  return [d.legend ? `Legend:\n1 ${d.legend}` : '', d.champion ? `Champion:\n1 ${d.champion}` : '', sec('MainDeck', d.main), sec('Battlefields', d.bf), sec('Runes', d.runes), sec('Sideboard', d.side)].filter(Boolean).join('\n');
 }
 
 // --- Data
@@ -2105,14 +2196,14 @@ function csvCell(v) { const s = String(v ?? ''); return /[",\n]/.test(s) ? '"' +
 function saveForm() {
   const f = S.form;
   if (!f.deckId || !S.decks[f.deckId]) { toast('Pick your deck first.'); return; }
-  if (!f.opp.trim()) { toast('Enter the opponent’s deck.'); document.getElementById('f-opp')?.focus(); return; }
+  if (!f.oppLegend.trim()) { toast('Enter the opponent’s Legend.'); document.getElementById('f-opplegend')?.focus(); return; }
   f.games.forEach(autoResult);
   if (!f.games.some(g => g.r)) { toast('Mark at least one game result, or type a score.'); return; }
   const id = f.editId || uid('m');
   const prev = S.matches[id];
-  S.matches[id] = { id, deckId: f.deckId, opp: f.opp.trim(), oppName: f.oppName.trim(), event: f.event.trim(), round: f.round.trim(), date: f.date || today(),
-    games: f.games.map(g => ({ r: g.r, first: g.first, ms: g.ms === '' ? '' : +g.ms, os: g.os === '' ? '' : +g.os, myBf: g.myBf, oppBf: g.oppBf.trim(), ins: g.ins.filter(x => x.q > 0), outs: g.outs.filter(x => x.q > 0) })),
-    replays: f.replays.map(x => ({ ...x })), shots: f.shots.map(x => ({ ...x })), oppLegend: f.oppLegend.trim(), oppChamp: f.oppChamp.trim(),
+  S.matches[id] = { id, deckId: f.deckId, event: f.event.trim(), round: f.round.trim(), date: f.date || today(),
+    games: f.games.map(g => ({ r: g.r, first: g.first, ms: g.ms === '' ? '' : +g.ms, os: g.os === '' ? '' : +g.os, myBf: bfName(g.myBf), oppBf: bfName(g.oppBf), ins: g.ins.filter(x => x.q > 0), outs: g.outs.filter(x => x.q > 0) })),
+    replays: f.replays.map(x => ({ ...x })), shots: f.shots.map(x => ({ ...x })), oppLegend: legendName(f.oppLegend), oppChamp: champName(f.oppChamp),
     myLegend: f.editId && f.myLegend != null ? f.myLegend : (S.decks[f.deckId]?.legend || ''), myChamp: f.editId && f.myChamp != null ? f.myChamp : (S.decks[f.deckId]?.champion || ''),
     notes: f.notes.trim(), created: prev?.created || Date.now(), ...(prev?.example ? { example: true } : {}) };
   // Uploaded files removed while editing are deleted from storage once the change is saved.
@@ -2135,16 +2226,16 @@ document.addEventListener('click', e => {
     case 'confirm': S.ui.confirm = b.dataset.what; render(); break;
     case 'unconfirm': S.ui.confirm = null; render(); break;
     case 'close-copy': S.ui.copy = null; render(); break;
-    case 'g-res': { const g = S.form.games[+b.dataset.i]; g.r = g.r === b.dataset.v ? '' : b.dataset.v; render(); break; }
+    case 'g-res': { const g = S.form.games[+b.dataset.i]; g.r = g.r === b.dataset.v ? '' : b.dataset.v; g.auto = false; render(); break; }
     case 'g-first': { const g = S.form.games[+b.dataset.i]; g.first = g.first === b.dataset.v ? '' : b.dataset.v; render(); break; }
     case 'cancel-edit': S.form = blankForm(); S.ui.sbOpen = null; render(); break;
     case 'fsb-toggle': {
       const i = +b.dataset.i, g = S.form.games[i], deck = S.decks[S.form.deckId];
       S.ui.sbOpen = S.ui.sbOpen === i ? null : i;
       // First time open with nothing recorded: start from the guide for this opponent.
-      const guide = deck && S.form.opp.trim() && getGuide(deck, norm(S.form.opp));
+      const guide = deck && S.form.oppLegend.trim() && getGuide(deck, legendKey(S.form.oppLegend));
       if (S.ui.sbOpen === i && i > 0 && !g.ins.length && !g.outs.length && guide && ((guide.ins || []).length || (guide.outs || []).length)) {
-        g.ins = (guide.ins || []).map(x => ({ ...x })); g.outs = (guide.outs || []).map(x => ({ ...x })); toast(`Filled from your guide vs ${guide.arch}`);
+        g.ins = (guide.ins || []).map(x => ({ ...x })); g.outs = (guide.outs || []).map(x => ({ ...x })); toast(`Filled from your guide vs ${legendName(guide.arch)}`);
       }
       render(); break; }
     case 'swap': {
@@ -2153,11 +2244,7 @@ document.addEventListener('click', e => {
       else if (d) { const key = S.ui.guideKey, g = getGuide(d, key, archNames().get(key) || key, true); [g.ins, g.outs] = swapMove(g.ins || [], g.outs || [], n, dir); persist('decks', d.id, 400); render(); }
       break; }
     case 'sb-view': { const k = b.dataset.id + ':' + b.dataset.i; S.ui.sbView = S.ui.sbView === k ? null : k; render(); break; }
-    case 'fsb-step': {
-      const g = S.form.games[+b.dataset.i], k = b.dataset.side === 'in' ? 'ins' : 'outs', n = b.dataset.card;
-      let it = g[k].find(x => norm(x.n) === norm(n)); if (!it) { it = { n, q: 0 }; g[k].push(it); }
-      it.q = Math.max(0, it.q + +b.dataset.d); g[k] = g[k].filter(x => x.q > 0); render(); break; }
-    case 'fsb-guide': { const g = S.form.games[+b.dataset.i], guide = getGuide(S.decks[S.form.deckId], norm(S.form.opp)); if (!guide) break;
+    case 'fsb-guide': { const g = S.form.games[+b.dataset.i], deck = S.decks[S.form.deckId], guide = deck && getGuide(deck, legendKey(S.form.oppLegend)); if (!guide) break;
       g.ins = (guide.ins || []).map(x => ({ ...x })); g.outs = (guide.outs || []).map(x => ({ ...x })); render(); break; }
     case 'fsb-copy': { const i = +b.dataset.i, g = S.form.games[i], prev = S.form.games[i - 1]; g.ins = prev.ins.map(x => ({ ...x })); g.outs = prev.outs.map(x => ({ ...x })); render(); break; }
     case 'fsb-clear': { const g = S.form.games[+b.dataset.i]; g.ins = []; g.outs = []; render(); break; }
@@ -2171,23 +2258,19 @@ document.addEventListener('click', e => {
     case 'rp-del': S.form.replays.splice(+b.dataset.j, 1); render(); break;
     case 'rp-watch': { const k = b.dataset.id + ':' + b.dataset.j; S.ui.watch = S.ui.watch === k ? null : k; render(); break; }
     case 'edit-match': { const m = S.matches[b.dataset.id]; if (!m) break;
-      S.form = { editId: m.id, deckId: m.deckId, opp: m.opp || '', oppName: m.oppName || '', event: m.event || '', round: m.round || '', date: m.date || today(),
+      const o = oppOf(m, false), known = o && (m.oppLegend || resolveLegend(m.opp));
+      S.form = { editId: m.id, deckId: m.deckId, legacyOpp: m.oppLegend ? '' : (m.opp || ''), event: m.event || '', round: m.round || '', date: m.date || today(),
         games: [0, 1, 2].map(i => gameFromSaved(m.games?.[i])), notes: m.notes || '', replays: (m.replays || []).map(x => ({ ...x })), shots: (m.shots || []).map(x => ({ ...x })),
-        oppLegend: m.oppLegend || '', oppChamp: m.oppChamp || '', myLegend: m.myLegend ?? null, myChamp: m.myChamp ?? null };
+        oppLegend: known ? o.legend : '', oppChamp: m.oppChamp || '', myLegend: m.myLegend ?? null, myChamp: m.myChamp ?? null };
       S.ui.sbOpen = null;
       S.ui.confirm = null; S.ui.tab = 'log'; saveUI(); render(); window.scrollTo(0, 0); break; }
     case 'del-match': (S.matches[b.dataset.id]?.replays || []).filter(x => x.kind === 'file').forEach(x => deleteAsset(x.id)); (S.matches[b.dataset.id]?.shots || []).forEach(x => deleteAsset(x.id)); removeDoc('matches', b.dataset.id); S.ui.confirm = null; if (S.form.editId === b.dataset.id) S.form = blankForm(); toast('Match deleted'); render(); break;
     case 'log-filter': S.ui.logFilter = b.dataset.v; saveUI(); render(); break;
     case 'stats-scope': S.ui.statsScope = b.dataset.v; saveUI(); render(); break;
+    case 'champ-toggle': S.ui.showChamp = !S.ui.showChamp; saveUI(); render(); break;
+    case 'bf-show': S.ui.bfOpp = b.dataset.key; saveUI(); render(); document.getElementById('bf-panel')?.scrollIntoView({ block: 'start' }); break;
     case 'open-guide': { S.ui.guideKey = b.dataset.key; setTab('sideboard'); break; }
     case 'pick-guide': S.ui.guideKey = b.dataset.key; S.ui.copy = null; render(); break;
-    case 'g-step': {
-      if (!d) break; const key = S.ui.guideKey, arch = archNames().get(key) || key;
-      const g = getGuide(d, key, arch, true), arrK = b.dataset.side === 'in' ? 'ins' : 'outs', arr = g[arrK] = g[arrK] || [];
-      const n = b.dataset.card, delta = +b.dataset.d;
-      let it = arr.find(x => norm(x.n) === norm(n)); if (!it) { it = { n, q: 0 }; arr.push(it); }
-      it.q = Math.max(0, it.q + delta); g[arrK] = arr.filter(x => x.q > 0);
-      persist('decks', d.id, 400); render(); break; }
     case 'g-prune': { if (!d) break; const g = getGuide(d, S.ui.guideKey); if (!g) break;
       const side = parseList(d.side), main = parseList(d.main);
       g.ins = (g.ins || []).filter(x => side.some(c => norm(c.n) === norm(x.n))); g.outs = (g.outs || []).filter(x => main.some(c => norm(c.n) === norm(x.n)));
@@ -2218,11 +2301,11 @@ document.addEventListener('click', e => {
     case 'export-json': exportBackup(); break;
     case 'export-csv': {
       const gcols = i => [`g${i}`, `g${i}_first`, `g${i}_my_points`, `g${i}_opp_points`, `g${i}_my_battlefield`, `g${i}_opp_battlefield`, `g${i}_sided_in`, `g${i}_sided_out`];
-      const head = ['date', 'event', 'round', 'my_deck', 'my_legend', 'my_champion', 'opponent_deck', 'opponent', 'opp_legend', 'opp_champion', 'result', 'games_won', 'games_lost', ...gcols(1), ...gcols(2), ...gcols(3), 'replays', 'notes'];
+      const head = ['date', 'event', 'round', 'my_deck', 'my_legend', 'my_champion', 'opp_legend', 'opp_champion', 'result', 'games_won', 'games_lost', ...gcols(1), ...gcols(2), ...gcols(3), 'replays', 'notes'];
       const gv = g => [g.r, g.first, g.ms, g.os, g.myBf, g.oppBf, (g.ins || []).map(x => `${x.q} ${x.n}`).join('; '), (g.outs || []).map(x => `${x.q} ${x.n}`).join('; ')];
       const rows = sortedMatches().map(m => { const r = matchResult(m), g = i => m.games?.[i] || {};
         const me = myLineup(m, S.decks[m.deckId]);
-        return [m.date, m.event, m.round, S.decks[m.deckId]?.name || '', me.L, me.C, m.opp, m.oppName, m.oppLegend || '', m.oppChamp || '', r.res, r.w, r.l, ...gv(g(0)), ...gv(g(1)), ...gv(g(2)),
+        return [m.date, m.event, m.round, S.decks[m.deckId]?.name || '', me.L, me.C, oppOf(m, false)?.legend || '', m.oppChamp || '', r.res, r.w, r.l, ...gv(g(0)), ...gv(g(1)), ...gv(g(2)),
           (m.replays || []).map(x => x.kind === 'link' ? x.url : x.name).join(' | '), m.notes].map(csvCell).join(','); });
       offerFile(`riftbound-matches-${today()}.csv`, [head.join(','), ...rows].join('\n'), 'CSV copied to clipboard'); break; }
     case 'card-add': { const c = CDB.byKey.get(b.dataset.k); if (!c) break; const msg = addCard(c, S.ui.addTo); if (msg) { toast(msg); if (c.t === 'Legend') { S.ui.cf.limit = 60; render(); } else refreshBuild(); } break; }
@@ -2303,11 +2386,14 @@ document.addEventListener('input', e => {
 });
 document.addEventListener('change', e => {
   const el = e.target;
-  if (el.id === 'f-opp') { if (guessOpp(S.form) || S.ui.sbOpen != null) render(); return; }
-  if (el.id === 'f-opplegend' || el.id === 'f-oppchamp') { render(); return; }
-  if (el.dataset && el.dataset.bind === 'game' && (el.dataset.k === 'myBf' || el.dataset.k === 'oppBf')) { render(); return; }
+  if (el.id === 'f-opplegend') { settleOppLegend(S.form); render(); return; }
+  if (el.id === 'f-oppchamp') { const c = findCard(el.value); if (c) S.form.oppChamp = c.n; render(); return; }
+  if (el.dataset && el.dataset.bind === 'game' && (el.dataset.k === 'myBf' || el.dataset.k === 'oppBf')) { const g = S.form.games[+el.dataset.i]; g[el.dataset.k] = bfName(el.value); render(); return; }
   if (el.id === 'deck-pick') { S.ui.deckId = el.value; S.ui.confirm = null; S.ui.pasteOpen = false; S.ui.copy = null; if (!S.form.editId) S.form.deckId = el.value; saveUI(); render(); return; }
-  if (el.id === 'f-deck') { S.form.deckId = el.value; S.ui.sbOpen = null; render(); return; }
+  // A different deck means a different Legend and Champion on my side, also when editing an old match.
+  if (el.id === 'f-deck') { S.form.deckId = el.value; S.form.myLegend = null; S.form.myChamp = null; S.ui.sbOpen = null; render(); return; }
+  if (el.id === 'bf-opp') { S.ui.bfOpp = el.value; saveUI(); render(); return; }
+  if (el.dataset && el.dataset.bind === 'field' && el.dataset.k === 'arch') { const f = S.settings.field[+el.dataset.i]; if (f) { f.arch = legendName(el.value); persist('settings', 'main'); } render(); return; }
   if (el.id === 'd-legend' || el.id === 'd-champion') {
     const d = curDeck(), L = legendOf(d);
     if (d && L && el.id === 'd-legend') { d.domains = L.d.slice(); persist('decks', d.id); }
@@ -2345,13 +2431,34 @@ document.addEventListener('submit', e => {
   }
   else if (f.id === 'add-arch') {
     const v = document.getElementById('new-arch').value.trim(), d = curDeck(); if (!v || !d) return;
-    const key = norm(v); getGuide(d, key, v, true); S.ui.guideKey = key; persist('decks', d.id); render();
+    const key = legendKey(v); getGuide(d, key, legendName(v), true); S.ui.guideKey = key; persist('decks', d.id); render();
   } else if (f.id === 'field-add') {
     const a = document.getElementById('fn-arch').value.trim(), s = document.getElementById('fn-share').value; if (!a) return;
-    (S.settings.field = S.settings.field || []).push({ arch: a, share: s === '' ? 0 : Math.max(0, +s) }); persist('settings', 'main'); render();
+    (S.settings.field = S.settings.field || []).push({ arch: legendName(a), share: s === '' ? 0 : Math.max(0, +s) }); persist('settings', 'main'); render();
     setTimeout(() => document.getElementById('fn-arch')?.focus(), 0);
   }
 });
+// ---------- footer + ads ----------
+function renderFoot() {
+  document.getElementById('foot').innerHTML = `<span>Unofficial fan tool, not affiliated with Riot Games.</span>${window.claude ? '' : '<a href="privacy.html">Privacy</a><a href="https://github.com/AtiaBabaBa/riftprep" target="_blank" rel="noopener">Source</a>'}`;
+}
+function adsInit() {
+  const { client, slot } = ADS_CONFIG, box = document.getElementById('ad');
+  if (window.claude || !/^ca-pub-\d+$/.test(client)) return;
+  const hide = () => { box.hidden = true; };
+  let lib = document.querySelector('script[src*="adsbygoogle.js"]');
+  if (!lib) { lib = document.createElement('script'); lib.async = true; lib.crossOrigin = 'anonymous'; lib.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${client}`; document.head.appendChild(lib); }
+  lib.addEventListener('error', hide); // blocked by an ad blocker: no empty box
+  if (!/^\d+$/.test(slot)) return;
+  box.innerHTML = `<span class="ad-label">Advertisement</span><ins class="adsbygoogle" style="display:block" data-ad-client="${client}" data-ad-slot="${slot}" data-ad-format="auto" data-full-width-responsive="true"></ins>`;
+  box.hidden = false;
+  // AdSense marks a slot it couldn't fill; hide it rather than leave a blank panel.
+  new MutationObserver(() => { if (box.querySelector('ins[data-ad-status="unfilled"]')) hide(); }).observe(box, { attributes: true, subtree: true, attributeFilter: ['data-ad-status'] });
+  try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch { hide(); }
+  setTimeout(() => { const ins = box.querySelector('ins'); if (ins && !ins.dataset.adStatus && !ins.querySelector('iframe')) hide(); }, 5000);
+}
+renderFoot();
+adsInit();
 boot();
 })();
 </script>
