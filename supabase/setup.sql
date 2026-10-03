@@ -34,3 +34,23 @@ create policy "shots own select" on storage.objects for select to authenticated 
 create policy "shots own insert" on storage.objects for insert to authenticated with check (bucket_id = 'shots' and (storage.foldername(name))[1] = auth.uid()::text);
 create policy "shots own update" on storage.objects for update to authenticated using (bucket_id = 'shots' and (storage.foldername(name))[1] = auth.uid()::text);
 create policy "shots own delete" on storage.objects for delete to authenticated using (bucket_id = 'shots' and (storage.foldername(name))[1] = auth.uid()::text);
+
+-- Screenshot reading (supabase/functions/read-shot): how many screenshots each account had read per day,
+-- so the function can cap it. No policies: accounts reach it only through count_shot_read().
+create table if not exists public.shot_reads (
+  user_id uuid not null references auth.users (id) on delete cascade,
+  day     date not null default current_date,
+  n       integer not null default 0,
+  primary key (user_id, day)
+);
+alter table public.shot_reads enable row level security;
+
+-- Adds one read for the signed-in account and returns today's total.
+create or replace function public.count_shot_read() returns integer
+language sql security definer set search_path = public as $$
+  insert into public.shot_reads (user_id, day, n) values (auth.uid(), current_date, 1)
+  on conflict (user_id, day) do update set n = public.shot_reads.n + 1
+  returning n;
+$$;
+revoke all on function public.count_shot_read() from public, anon;
+grant execute on function public.count_shot_read() to authenticated;

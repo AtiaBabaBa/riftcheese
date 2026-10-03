@@ -205,6 +205,21 @@ td.r, th.r { text-align: right; }
 .shot.missing .shot-img, .shot-img.missing { opacity: .35; }
 .shot-x { position: absolute; top: -6px; right: -6px; width: 22px; height: 22px; border-radius: 50%; border: 0; background: var(--loss); color: #fff; font-weight: 700; cursor: pointer; line-height: 1; }
 .shot-full { display: block; max-width: 100%; max-height: calc(100vh - 120px); margin: 28px auto 0; border-radius: 6px; }
+/* final-result screenshot + reading it */
+.shot { display: grid; gap: 4px; justify-items: stretch; align-content: start; }
+.shot-final { border: 1px solid var(--line); background: var(--panel); color: var(--muted); border-radius: 5px; padding: 3px 6px; font-size: 12px; font-weight: 600; cursor: pointer; }
+.shot-final:hover { border-color: var(--accent); color: var(--ink); }
+.shot.final .shot-img { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+.shot-final[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.read-status { margin: 0; padding: 8px 12px; border-radius: 6px; background: var(--panel-2); font-size: 14px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.read-status.ok { background: var(--win-bg); color: var(--win); }
+.read-status.bad { background: var(--loss-bg); color: var(--loss); }
+.read-status .btn.link { color: inherit; text-decoration: underline; }
+.read-hint { margin: 0; }
+.spin { width: 14px; height: 14px; border: 2px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; flex: none; }
+@keyframes spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spin { animation-duration: 2.4s; } }
+.games-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .replay-video { width: 100%; max-height: 360px; border-radius: 6px; background: #000; }
 .preview { font-size: 14px; }
 .mrow { display: grid; grid-template-columns: 88px minmax(0, 1fr) auto auto; gap: 10px 14px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); }
@@ -603,6 +618,11 @@ const USER_DOMAIN = 'users.riftprep.app'; // usernames become <name>@this-domain
 // With only `client` filled in, AdSense Auto ads decide the placement instead. Ads never show in the Claude artifact.
 const ADS_CONFIG = { client: 'ca-pub-3505474961927285', slot: '' };
 
+// Screenshot reading: a screenshot marked "Final result" goes to supabase/functions/read-shot, which reads it with Claude
+// and fills in the match. Needs that function deployed with an Anthropic API key (README → Screenshot reading); until
+// then it stays off and the Final result button is hidden.
+const READ_SHOTS = false;
+
 // ---------- state ----------
 const S = {
   decks: {}, matches: {}, settings: { id: 'main', field: [], rules: { ...RULES_DEFAULT } },
@@ -825,8 +845,8 @@ const loaded = { decks: false, matches: false, settings: false };
 
 const lsGet = k => { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch { return null; } };
 const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
-{ const u = lsGet(UI_KEY); if (u) Object.assign(S.ui, { tab: u.tab || 'log', deckId: u.deckId || null, statsScope: u.statsScope || 'deck', logFilter: u.logFilter || 'deck', showChamp: !!u.showChamp, bfOpp: u.bfOpp || '' }); }
-const saveUI = () => lsSet(UI_KEY, { tab: S.ui.tab, deckId: S.ui.deckId, statsScope: S.ui.statsScope, logFilter: S.ui.logFilter, showChamp: S.ui.showChamp, bfOpp: S.ui.bfOpp });
+{ const u = lsGet(UI_KEY); if (u) Object.assign(S.ui, { tab: u.tab || 'log', deckId: u.deckId || null, statsScope: u.statsScope || 'deck', logFilter: u.logFilter || 'deck', showChamp: !!u.showChamp, bfOpp: u.bfOpp || '', bo: u.bo === 1 ? 1 : 3 }); }
+const saveUI = () => lsSet(UI_KEY, { tab: S.ui.tab, deckId: S.ui.deckId, statsScope: S.ui.statsScope, logFilter: S.ui.logFilter, showChamp: S.ui.showChamp, bfOpp: S.ui.bfOpp, bo: S.ui.bo });
 
 // ---------- helpers ----------
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -1111,8 +1131,11 @@ function blankForm(prev) {
     editId: null, deckId: prev?.deckId || S.ui.deckId || '', legacyOpp: '', event: prev?.event || '',
     round: prev && /^\d+$/.test(prev.round || '') ? String(+prev.round + 1) : '', date: prev?.date || today(),
     games: [blankGame(), blankGame(), blankGame()], notes: '', replays: [], shots: [], oppLegend: '', oppChamp: '', myLegend: null, myChamp: null,
+    bo: prev?.bo || S.ui.bo || 3, readInto: null,
   };
 }
+// Best of 1 shows and saves only game 1; best of 3 all three.
+const boGames = f => f.games.slice(0, f.bo === 1 ? 1 : 3);
 const gameFromSaved = g => ({ ...blankGame(), ...(g || {}), ms: g?.ms ?? '', os: g?.os ?? '', myBf: g?.myBf || '', oppBf: g?.oppBf || '', ins: (g?.ins || []).map(x => ({ ...x })), outs: (g?.outs || []).map(x => ({ ...x })) });
 // A typed score settles an unmarked game once someone reaches the win target. A result set this way follows
 // later corrections to the score; one picked by hand is left alone.
@@ -1318,11 +1341,25 @@ function fsbEditorHTML(f, g, i, deck) {
     ${swapHTML(deck, g.ins, g.outs, `data-ctx="game" data-i="${i}"`)}
   </div>`;
 }
+// What happens with the screenshot marked Final result: a hint, sign-in prompt, reading, or what was filled in.
+function readStatusHTML(f) {
+  if (!READ_SHOTS || !f.shots.length) return '';
+  const fin = f.shots.find(x => x.final), st = fin && S.ui.read && S.ui.read.id === fin.id ? S.ui.read : null;
+  if (!fin) return `<p class="small muted read-hint">Mark your end-of-game Riftatlas screenshot as <b>Final result</b> and Riftcheese reads it and fills in the match.</p>`;
+  if (!cloud.enabled) return `<p class="small muted read-hint">Reading screenshots works on the Riftcheese website, when signed in.</p>`;
+  if (!cloudOn()) return `<p class="read-status">Sign in to have the final screenshot read and the match filled in. <button type="button" class="btn sm" data-act="tab" data-tab="data">Sign in</button></p>`;
+  if (st && st.state === 'reading') return `<p class="read-status" role="status"><span class="spin" aria-hidden="true"></span>Reading the screenshot… this takes about 10–30 seconds.</p>`;
+  if (st && st.state === 'done') return `<p class="read-status ok" role="status">${esc(st.msg)} <button type="button" class="btn sm link" data-act="shot-read">Read again</button></p>`;
+  if (st && st.state === 'error') return `<p class="read-status bad" role="status">${esc(st.msg)} <button type="button" class="btn sm" data-act="shot-read">Try again</button></p>`;
+  return `<p class="read-status"><button type="button" class="btn sm primary" data-act="shot-read">Read the final screenshot</button><span class="small muted">Fills in their Legend, the score, result, battlefields and who went first.</span></p>`;
+}
 function shotsFormHTML(f) {
-  const tiles = f.shots.map((x, j) => `<div class="shot"><button type="button" class="shot-img" data-act="shot-view" data-id="${esc(x.id)}" title="${esc(x.name || 'Screenshot')}"><img ${assetAttr(x.id)} alt="${esc(x.name || 'Screenshot')}" loading="lazy"></button>
-      <button type="button" class="shot-x" data-act="shot-del" data-j="${j}" aria-label="Remove ${esc(x.name || 'screenshot')}">×</button></div>`).join('');
+  const tiles = f.shots.map((x, j) => `<div class="shot${x.final ? ' final' : ''}"><button type="button" class="shot-img" data-act="shot-view" data-id="${esc(x.id)}" title="${esc(x.name || 'Screenshot')}"><img ${assetAttr(x.id)} alt="${esc(x.name || 'Screenshot')}" loading="lazy"></button>
+      <button type="button" class="shot-x" data-act="shot-del" data-j="${j}" aria-label="Remove ${esc(x.name || 'screenshot')}">×</button>
+      ${READ_SHOTS ? `<button type="button" class="shot-final" data-act="shot-final" data-j="${j}" aria-pressed="${!!x.final}" title="The end-of-game screenshot: Riftcheese reads it and fills in the match">${x.final ? '✓ Final result' : 'Final result'}</button>` : ''}</div>`).join('');
   return `<div class="field"><span class="label">Screenshots</span>
     ${tiles ? `<div class="shots">${tiles}</div>` : ''}
+    ${readStatusHTML(f)}
     ${assets ? `<div class="row"><label class="btn sm" for="shot-file">Upload screenshots</label><input id="shot-file" type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden>
       <span class="small muted" id="shot-status">PNG, JPG, WebP or GIF up to 20 MB each. You can also paste a screenshot (Ctrl+V) while on this tab.${assets.local ? ' Saved in this browser with your matches.' : ''}</span></div>`
       : `<span class="small muted">${mode === 'local' ? 'This browser can’t store files, so screenshot uploads are off.' : 'Uploading screenshots needs edit access to this page.'}</span>`}
@@ -1364,12 +1401,13 @@ function viewLog() {
   const f = S.form, l = deckList();
   if (!S.decks[f.deckId]) f.deckId = S.ui.deckId || (l[0] && l[0].id) || '';
   const deck = S.decks[f.deckId];
-  const r = matchResult(f);
-  const gameRows = f.games.map((g, i) => gameRowHTML(f, g, i, deck)).join('');
+  const r = matchResult({ games: boGames(f) });
+  const gameRows = boGames(f).map((g, i) => gameRowHTML(f, g, i, deck)).join('');
   const form = `
   <section class="panel">
     <div class="panel-head"><h2>${f.editId ? 'Edit match' : 'Record a match'}</h2><span class="row">${f.editId ? '<button class="btn sm" data-act="cancel-edit">Cancel edit</button>' : ''}<button class="btn sm" data-act="tab" data-tab="history">History (${Object.keys(S.matches).length})</button></span></div>
     <form id="match-form" class="grid" style="grid-template-columns:1fr" autocomplete="off">
+      ${shotsFormHTML(f)}
       <div class="field"><label class="label" for="f-deck">My deck</label>
         <select id="f-deck" data-bind="form" data-k="deckId">${l.length ? l.map(d => `<option value="${esc(d.id)}"${d.id === f.deckId ? ' selected' : ''}>${esc(d.name || 'Untitled deck')}</option>`).join('') : '<option value="">No decks yet</option>'}</select>${l.length ? '' : '<button type="button" class="btn sm" data-act="new-deck" style="justify-self:start">New deck</button>'}</div>
       ${lineupFormHTML(f, deck)}
@@ -1378,12 +1416,13 @@ function viewLog() {
         <div class="field"><label class="label" for="f-round">Round</label><input id="f-round" placeholder="1" value="${esc(f.round)}" data-bind="form" data-k="round"></div>
         <div class="field"><label class="label" for="f-date">Date</label><input id="f-date" type="date" value="${esc(f.date)}" data-bind="form" data-k="date"></div>
       </div>
+      <div class="games-head"><span class="label">Format</span>
+        <span class="seg" role="group" aria-label="Match format">${[[1, 'Best of 1'], [3, 'Best of 3']].map(([v, n]) => `<button type="button" class="N" data-act="bo" data-v="${v}" aria-pressed="${f.bo === v}">${n}</button>`).join('')}</span></div>
       <div class="games">${gameRows}</div>
-      ${shotsFormHTML(f)}
       ${replaysFormHTML(f)}
       <div class="field"><label class="label" for="f-notes">Notes</label><textarea id="f-notes" rows="3" placeholder="Key turns, their tech cards, what to change next time" data-bind="form" data-k="notes">${esc(f.notes)}</textarea></div>
       <div class="spread">
-        <span class="preview" id="f-preview">${r.res ? `Match: <span class="pill ${r.res}">${{ W: 'Win', L: 'Loss', D: 'Draw' }[r.res]} ${r.w}–${r.l}${r.d ? '–' + r.d : ''}</span>` : '<span class="muted">Mark each game W, L or D, or type the score.</span>'}</span>
+        <span class="preview" id="f-preview">${r.res ? `Match: <span class="pill ${r.res}">${{ W: 'Win', L: 'Loss', D: 'Draw' }[r.res]} ${r.w}–${r.l}${r.d ? '–' + r.d : ''}</span>` : `<span class="muted">${f.bo === 1 ? 'Mark the game' : 'Mark each game'} W, L or D, or type the score.</span>`}</span>
         <button class="btn primary" type="submit"${l.length ? '' : ' disabled'}>${f.editId ? 'Save changes' : 'Save match'}</button>
       </div>
     </form>
@@ -1431,7 +1470,7 @@ function historyListHTML() {
     return `<div class="mrow">
       <div class="date small num muted">${esc(m.date || '')}</div>
       <div style="min-width:0"><div class="opp">vs ${esc(o ? o.legend : 'Unknown Legend')}${ch && m.oppChamp ? ` <span class="muted" style="font-weight:400">· ${esc(champName(m.oppChamp))}</span>` : ''}</div>
-        <div class="meta">${esc(d ? d.name : 'Deleted deck')}${m.event ? ' · ' + esc(m.event) : ''}${m.round ? ' · R' + esc(m.round) : ''}</div></div>
+        <div class="meta">${esc(d ? d.name : 'Deleted deck')}${m.event ? ' · ' + esc(m.event) : ''}${m.round ? ' · R' + esc(m.round) : ''}${m.bo === 1 ? ' · Bo1' : ''}</div></div>
       <div class="gs" aria-label="Games">${played.map(({ g, i }) => `<span class="g ${g.r}" title="Game ${i + 1}: ${g.r}${g.first ? (g.first === 'me' ? ', I went first' : ', opponent went first') : ''}">${g.r}</span>`).join('')}
         ${rr.res ? `<span class="pill ${rr.res}" style="margin-left:6px">${rr.w}–${rr.l}${rr.d ? '–' + rr.d : ''}</span>` : ''}</div>
       <div class="row">${conf ? `<span class="confirm">Delete?${(m.replays || []).some(x => x.kind === 'file') ? ' Uploaded replays are deleted too.' : (m.shots || []).length ? ' Its screenshots are deleted too.' : ''} <button class="btn sm danger" data-act="del-match" data-id="${esc(m.id)}">Delete</button><button class="btn sm" data-act="unconfirm">Keep</button></span>`
@@ -2192,6 +2231,82 @@ function openShot(id) {
   document.getElementById('modal-body').innerHTML = `<img class="shot-full" ${assetAttr(id)} alt="Screenshot">`;
   const m = document.getElementById('modal'); m.hidden = false; m.querySelector('.modal-x').focus();
 }
+// --- Reading the Final result screenshot. supabase/functions/read-shot sends it to Claude and returns what the
+// Riftatlas screen shows; applyRead() puts that into the form for the player to check before saving.
+async function shotBlob(id) {
+  const url = assetURLs.get(id);
+  if (url) { try { return await (await fetch(url)).blob(); } catch {} }
+  return getStored(id);
+}
+// JPEG, at most 2576px on the long edge: the most detail the model reads.
+async function imageForReading(blob) {
+  const bmp = await createImageBitmap(blob), k = Math.min(1, 2576 / Math.max(bmp.width, bmp.height));
+  const c = document.createElement('canvas'); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+  const cx = c.getContext('2d'); cx.fillStyle = '#000'; cx.fillRect(0, 0, c.width, c.height); cx.drawImage(bmp, 0, 0, c.width, c.height); bmp.close && bmp.close();
+  const out = await new Promise(r => c.toBlob(r, 'image/jpeg', 0.9));
+  return (await blobToDataURL(out)).split(',')[1];
+}
+async function readShot(id) {
+  const f = S.form;
+  if (!cloudOn()) { render(); return; }
+  S.ui.read = { id, state: 'reading' }; render();
+  const fail = msg => { if (S.form === f) { S.ui.read = { id, state: 'error', msg }; render(); } };
+  try {
+    const blob = await shotBlob(id); if (!blob) return fail('That screenshot couldn’t be opened. Upload it again.');
+    const deck = S.decks[f.deckId];
+    const body = { image: await imageForReading(blob), mediaType: 'image/jpeg', context: {
+      legends: CDB.legends.map(c => c.n), battlefields: CDB.cards.filter(c => c.t === 'Battlefield').map(c => c.n),
+      myLegend: f.myLegend ?? deck?.legend ?? '', myChampion: f.myChamp ?? deck?.champion ?? '', myBattlefields: deck ? parseList(deck.bf).map(x => x.n) : [],
+      winPoints: rules().winPoints || 8 } };
+    const { data, error } = await cloud.client.functions.invoke('read-shot', { body });
+    if (error) {
+      const res = error.context, j = res && typeof res.json === 'function' ? await res.json().catch(() => null) : null;
+      return fail(res && res.status === 404 ? 'Screenshot reading isn’t set up on this site yet.' : (j && j.error && j.message) || 'Reading failed. Check your connection and try again.');
+    }
+    // Ignore the answer if the form moved on meanwhile (saved, cancelled, or another screenshot marked).
+    if (S.form !== f || !f.shots.some(x => x.id === id && x.final)) return;
+    const r = applyRead(f, data && data.result, deck);
+    S.ui.read = { id, state: r.ok ? 'done' : 'error', msg: r.msg }; render();
+  } catch { fail('Reading failed. Try again.'); }
+}
+function applyRead(f, r, deck) {
+  if (!r || !r.is_riftatlas_game) return { ok: false, msg: 'This doesn’t look like a Riftatlas game screenshot.' };
+  // Best of 1: game 1. Best of 3: the game this screenshot filled before, else the first game without a result.
+  const open = boGames(f).findIndex(g => !g.r);
+  const i = f.readInto != null && f.readInto < f.bo ? f.readInto : open >= 0 ? open : f.bo - 1;
+  const g = f.games[i], got = [], notes = [];
+  const L = resolveLegend(r.opp_legend);
+  if (L) {
+    if (!f.oppLegend.trim()) { f.oppLegend = L.n; got.push(`their Legend (${L.n})`); }
+    else if (legendKey(f.oppLegend) !== norm(L.n)) notes.push(`The screenshot looks like ${L.n}; kept the Legend you typed.`);
+  }
+  const C = r.opp_champion ? findCard(r.opp_champion) : null;
+  if (C && isChampUnit(C) && !f.oppChamp.trim()) { f.oppChamp = C.n; got.push('their Chosen Champion'); }
+  if (L) settleOppLegend(f);
+  const num = v => Number.isInteger(v) && v >= 0 && v < 100 ? String(v) : '';
+  const scored = !!(num(r.my_score) || num(r.opp_score)), won = r.winner === 'me' || r.winner === 'opp';
+  if (scored) { g.ms = num(r.my_score); g.os = num(r.opp_score); got.push(`score ${g.ms || '?'}–${g.os || '?'}`); }
+  // A win on points follows later fixes to the score (autoResult); a concede is a result picked outright.
+  if (scored || won) {
+    g.r = ''; g.auto = false;
+    if (r.ended_by === 'points' || !won) autoResult(g);
+    if (!g.r && won) g.r = r.winner === 'me' ? 'W' : 'L';
+    if (g.r) got.push({ W: 'win', L: 'loss', D: 'draw' }[g.r] + (r.ended_by === 'concede' ? ' by concede' : r.ended_by === 'disconnect' ? ' (disconnect)' : ''));
+  }
+  const bf = n => { const c = n ? findCard(n) : null; return c && c.t === 'Battlefield' ? c.n : ''; };
+  const mine = deck ? parseList(deck.bf).map(x => x.n) : [], inDeck = n => mine.find(x => cardKey(x) === cardKey(n));
+  let mb = bf(r.my_battlefield), ob = bf(r.opp_battlefield);
+  if (mine.length && ob && inDeck(ob) && !(mb && inDeck(mb))) [mb, ob] = [ob, mb];
+  if (mb) g.myBf = inDeck(mb) || mb;
+  if (ob) g.oppBf = ob;
+  if (mb || ob) got.push('battlefields');
+  if (r.went_first === 'me' || r.went_first === 'opp') { g.first = r.went_first; got.push(r.went_first === 'me' ? 'you went first' : 'they went first'); }
+  const myL = resolveLegend(r.my_legend), deckL = resolveLegend(f.myLegend ?? deck?.legend);
+  if (myL && deckL && myL.k !== deckL.k) notes.push(`The screenshot shows ${myL.n} as your Legend, but this deck uses ${deckL.n}.`);
+  if (!got.length) return { ok: false, msg: 'Couldn’t read the match details from this screenshot. Fill them in by hand.' };
+  f.readInto = i;
+  return { ok: true, msg: `Filled in ${f.bo === 1 ? 'the game' : `game ${i + 1}`}: ${got.join(', ')}. Check it before saving.${notes.length ? ' ' + notes.join(' ') : ''}` };
+}
 async function uploadReplay(file) {
   const st = document.getElementById('rp-status');
   const say = t => { if (st) st.textContent = t; };
@@ -2217,12 +2332,13 @@ function saveForm() {
   const f = S.form;
   if (!f.deckId || !S.decks[f.deckId]) { toast('Pick your deck first.'); return; }
   if (!f.oppLegend.trim()) { toast('Enter the opponent’s Legend.'); document.getElementById('f-opplegend')?.focus(); return; }
-  f.games.forEach(autoResult);
-  if (!f.games.some(g => g.r)) { toast('Mark at least one game result, or type a score.'); return; }
+  const games = boGames(f);
+  games.forEach(autoResult);
+  if (!games.some(g => g.r)) { toast(f.bo === 1 ? 'Mark the game result, or type the score.' : 'Mark at least one game result, or type a score.'); return; }
   const id = f.editId || uid('m');
   const prev = S.matches[id];
-  S.matches[id] = { id, deckId: f.deckId, event: f.event.trim(), round: f.round.trim(), date: f.date || today(),
-    games: f.games.map(g => ({ r: g.r, first: g.first, ms: g.ms === '' ? '' : +g.ms, os: g.os === '' ? '' : +g.os, myBf: bfName(g.myBf), oppBf: bfName(g.oppBf), ins: g.ins.filter(x => x.q > 0), outs: g.outs.filter(x => x.q > 0) })),
+  S.matches[id] = { id, deckId: f.deckId, event: f.event.trim(), round: f.round.trim(), date: f.date || today(), bo: f.bo === 1 ? 1 : 3,
+    games: games.map(g => ({ r: g.r, first: g.first, ms: g.ms === '' ? '' : +g.ms, os: g.os === '' ? '' : +g.os, myBf: bfName(g.myBf), oppBf: bfName(g.oppBf), ins: g.ins.filter(x => x.q > 0), outs: g.outs.filter(x => x.q > 0) })),
     replays: f.replays.map(x => ({ ...x })), shots: f.shots.map(x => ({ ...x })), oppLegend: legendName(f.oppLegend), oppChamp: champName(f.oppChamp),
     myLegend: f.editId && f.myLegend != null ? f.myLegend : (S.decks[f.deckId]?.legend || ''), myChamp: f.editId && f.myChamp != null ? f.myChamp : (S.decks[f.deckId]?.champion || ''),
     notes: f.notes.trim(), created: prev?.created || Date.now(), ...(prev?.example ? { example: true } : {}) };
@@ -2274,6 +2390,12 @@ document.addEventListener('click', e => {
       let label = 'Replay link'; try { label = new URL(v).hostname.replace(/^www\./, ''); } catch {}
       S.form.replays.push({ kind: 'link', url: v, label }); render(); break; }
     case 'shot-del': S.form.shots.splice(+b.dataset.j, 1); render(); break;
+    // One screenshot at most is the final result; marking it reads it into the form.
+    case 'shot-final': { const x = S.form.shots[+b.dataset.j]; if (!x) break; const on = !x.final;
+      S.form.shots.forEach(s => delete s.final);
+      if (on) { x.final = true; readShot(x.id); } else { S.ui.read = null; render(); } break; }
+    case 'shot-read': { const x = S.form.shots.find(s => s.final); if (x) readShot(x.id); break; }
+    case 'bo': S.form.bo = +b.dataset.v === 1 ? 1 : 3; if (!S.form.editId) S.ui.bo = S.form.bo; if (S.ui.sbOpen != null && S.ui.sbOpen >= S.form.bo) S.ui.sbOpen = null; saveUI(); render(); break;
     case 'shot-view': openShot(b.dataset.id); break;
     case 'rp-del': S.form.replays.splice(+b.dataset.j, 1); render(); break;
     case 'rp-watch': { const k = b.dataset.id + ':' + b.dataset.j; S.ui.watch = S.ui.watch === k ? null : k; render(); break; }
@@ -2281,7 +2403,7 @@ document.addEventListener('click', e => {
       const o = oppOf(m, false), known = o && (m.oppLegend || resolveLegend(m.opp));
       S.form = { editId: m.id, deckId: m.deckId, legacyOpp: m.oppLegend ? '' : (m.opp || ''), event: m.event || '', round: m.round || '', date: m.date || today(),
         games: [0, 1, 2].map(i => gameFromSaved(m.games?.[i])), notes: m.notes || '', replays: (m.replays || []).map(x => ({ ...x })), shots: (m.shots || []).map(x => ({ ...x })),
-        oppLegend: known ? o.legend : '', oppChamp: m.oppChamp || '', myLegend: m.myLegend ?? null, myChamp: m.myChamp ?? null };
+        oppLegend: known ? o.legend : '', oppChamp: m.oppChamp || '', myLegend: m.myLegend ?? null, myChamp: m.myChamp ?? null, bo: m.bo === 1 ? 1 : 3, readInto: null };
       S.ui.sbOpen = null;
       S.ui.confirm = null; S.ui.tab = 'log'; saveUI(); render(); window.scrollTo(0, 0); break; }
     case 'del-match': (S.matches[b.dataset.id]?.replays || []).filter(x => x.kind === 'file').forEach(x => deleteAsset(x.id)); (S.matches[b.dataset.id]?.shots || []).forEach(x => deleteAsset(x.id)); removeDoc('matches', b.dataset.id); S.ui.confirm = null; if (S.form.editId === b.dataset.id) S.form = blankForm(); toast('Match deleted'); render(); break;
@@ -2321,11 +2443,11 @@ document.addEventListener('click', e => {
     case 'export-json': exportBackup(); break;
     case 'export-csv': {
       const gcols = i => [`g${i}`, `g${i}_first`, `g${i}_my_points`, `g${i}_opp_points`, `g${i}_my_battlefield`, `g${i}_opp_battlefield`, `g${i}_sided_in`, `g${i}_sided_out`];
-      const head = ['date', 'event', 'round', 'my_deck', 'my_legend', 'my_champion', 'opp_legend', 'opp_champion', 'result', 'games_won', 'games_lost', ...gcols(1), ...gcols(2), ...gcols(3), 'replays', 'notes'];
+      const head = ['date', 'event', 'round', 'best_of', 'my_deck', 'my_legend', 'my_champion', 'opp_legend', 'opp_champion', 'result', 'games_won', 'games_lost', ...gcols(1), ...gcols(2), ...gcols(3), 'replays', 'notes'];
       const gv = g => [g.r, g.first, g.ms, g.os, g.myBf, g.oppBf, (g.ins || []).map(x => `${x.q} ${x.n}`).join('; '), (g.outs || []).map(x => `${x.q} ${x.n}`).join('; ')];
       const rows = sortedMatches().map(m => { const r = matchResult(m), g = i => m.games?.[i] || {};
         const me = myLineup(m, S.decks[m.deckId]);
-        return [m.date, m.event, m.round, S.decks[m.deckId]?.name || '', me.L, me.C, oppOf(m, false)?.legend || '', m.oppChamp || '', r.res, r.w, r.l, ...gv(g(0)), ...gv(g(1)), ...gv(g(2)),
+        return [m.date, m.event, m.round, m.bo === 1 ? 1 : 3, S.decks[m.deckId]?.name || '', me.L, me.C, oppOf(m, false)?.legend || '', m.oppChamp || '', r.res, r.w, r.l, ...gv(g(0)), ...gv(g(1)), ...gv(g(2)),
           (m.replays || []).map(x => x.kind === 'link' ? x.url : x.name).join(' | '), m.notes].map(csvCell).join(','); });
       offerFile(`riftcheese-matches-${today()}.csv`, [head.join(','), ...rows].join('\n'), 'CSV copied to clipboard'); break; }
     case 'card-add': { const c = CDB.byKey.get(b.dataset.k); if (!c) break; const msg = addCard(c, S.ui.addTo); if (msg) { toast(msg); if (c.t === 'Legend') { S.ui.cf.limit = 60; render(); } else refreshBuild(); } break; }
