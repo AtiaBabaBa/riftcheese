@@ -13,6 +13,7 @@ A tournament-prep tool for the Riftbound TCG: build decks from the full card dat
 - **Sideboard** – an in/out guide per opponent Legend and a copyable cheat sheet.
 - **Field** – expected match win rate for an event from the Legends you expect to face.
 - **Data** – JSON backup/import, CSV export of every match, format rules.
+- **Feedback** – email a bug report (opens with a template and browser details), or donate by PromptPay QR or KBank transfer.
 
 ## Install on a phone
 
@@ -73,6 +74,7 @@ Ads never appear in the Claude artifact version. `privacy.html` explains the ads
 - `scripts/build_index.py` – regenerates `index.html` from the source (and `ads.txt` when ads are set up): `python scripts/build_index.py`.
 - `privacy.html` – privacy page linked from the footer.
 - `manifest.webmanifest`, `sw.js`, `icons/` – what makes the site installable: the app manifest, the service worker (offline cache) and home-screen icons. `python scripts/make_icons.py` redraws the icons.
+- `images/promptpay-qr.jpg` – the donation QR code shown in the Feedback tab.
 - `cards/` – card data (`cards.json`) and image sprite sheets.
 
 ## Credits

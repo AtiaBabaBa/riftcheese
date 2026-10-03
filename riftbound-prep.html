@@ -410,6 +410,19 @@ td.bfc.lo { background: var(--loss-bg); } td.bfc.lo b { color: var(--loss); }
 td.bfc.none { color: var(--muted); opacity: .5; }
 .bfm .tot { border-left: 2px solid var(--line); }
 .bfm tr.tot td { border-top: 2px solid var(--line); }
+/* feedback tab */
+a.btn { display: inline-block; text-decoration: none; }
+.give { display: grid; gap: 20px; grid-template-columns: minmax(0, 260px) minmax(0, 1fr); align-items: start; }
+.give .qr { width: 100%; height: auto; max-width: 260px; border-radius: var(--r); border: 1px solid var(--line); display: block; }
+.give dl { margin: 0; display: grid; gap: 14px; }
+.give .qr-box { margin: 0; max-width: 260px; display: grid; gap: 10px; }
+.give figcaption { display: grid; gap: 4px; text-align: center; }
+.give figcaption strong { font-size: 18px; }
+.give figcaption span { font-size: 15px; }
+.give dt { font-size: 15px; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); font-weight: 600; margin-bottom: 4px; }
+.give dd { margin: 0; }
+.give .num-big { font-family: var(--f-mono); font-size: 18px; font-weight: 700; margin-right: 6px; }
+@media (max-width: 640px) { .give { grid-template-columns: 1fr; justify-items: center; } .give dl { justify-self: stretch; } }
 /* ad slot + footer */
 .ad { margin: 0 0 20px; padding: 8px 12px 12px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); display: grid; gap: 6px; min-width: 0; overflow: hidden; }
 .ad-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 600; }
@@ -502,7 +515,7 @@ td.bfc.none { color: var(--muted); opacity: .5; }
 const DOMAINS = ['Fury','Calm','Mind','Body','Chaos','Order'];
 const LEGEND_SUGGEST = ["Ahri","Annie","Darius","Garen","Jinx","Kai'Sa","Lee Sin","Leona","Lux","Master Yi","Miss Fortune","Sett","Teemo","Viktor","Volibear","Yasuo"];
 const RULES_DEFAULT = { minMain: 40, maxCopies: 3, runes: 12, battlefields: 3, sideMax: 10, format: 'standard', winPoints: 8 };
-const TABS = [['log','Match log'],['history','History'],['matchups','Matchups'],['sideboard','Sideboard'],['field','Field'],['decks','Decks'],['cards','Cards'],['data','Data']];
+const TABS = [['log','Match log'],['history','History'],['matchups','Matchups'],['sideboard','Sideboard'],['field','Field'],['decks','Decks'],['cards','Cards'],['data','Data'],['feedback','Feedback']];
 const TYPES = ['Legend','Unit','Spell','Gear','Rune','Battlefield'];
 // Official ban list (playriftbound.com announcements), current as of 18 Sep 2026.
 const BANS = {
@@ -1205,7 +1218,7 @@ function render() {
   let html = '';
   if (hasExamples()) html += `<div class="banner"><span>You're looking at example data. Clear it when you're ready to add your own decks and matches.</span><span class="row">${S.ui.confirm === 'examples' ? `<span class="confirm">Delete all example data? <button class="btn sm danger" data-act="clear-examples">Delete</button><button class="btn sm" data-act="unconfirm">Keep</button></span>` : `<button class="btn sm" data-act="confirm" data-what="examples">Clear example data</button>`}</span></div>`;
   html += installBannerHTML();
-  const v = { log: viewLog, matchups: viewMatchups, sideboard: viewSideboard, field: viewField, decks: viewDecks, cards: viewCards, data: viewData, history: viewHistory }[S.ui.tab] || viewLog;
+  const v = { log: viewLog, matchups: viewMatchups, sideboard: viewSideboard, field: viewField, decks: viewDecks, cards: viewCards, data: viewData, history: viewHistory, feedback: viewFeedback }[S.ui.tab] || viewLog;
   html += v();
   app.innerHTML = html;
   if (S.ui.tab === 'decks') renderDeckCheck();
@@ -2124,8 +2137,39 @@ function viewData() {
   </section>`;
 }
 
+// --- Feedback: bug reports by email, donations by PromptPay QR or bank transfer
+const FEEDBACK = { email: 'asia4poompandin@gmail.com', kbank: '0633522146' };
+const fmtKbank = n => n.replace(/^(\d{3})(\d)(\d{5})(\d)$/, '$1-$2-$3-$4');
+function bugMailto() {
+  const body = ['What happened:', '', '', 'What you expected:', '', '', 'Steps to reproduce:', '1. ', '', '---',
+    ...TABS.filter(([k]) => k === S.ui.prevTab).map(([, n]) => `Came from tab: ${n}`),
+    `Saving: ${cloudOn() ? 'cloud account' : mode === 'db' ? 'Claude artifact' : 'this browser'}`, `Screen: ${innerWidth}×${innerHeight}`, `Browser: ${navigator.userAgent}`].join('\n');
+  return `mailto:${FEEDBACK.email}?subject=${encodeURIComponent('Riftcheese bug report')}&body=${encodeURIComponent(body)}`;
+}
+function viewFeedback() {
+  return `
+  <section class="panel">
+    <div class="panel-head"><h2>Bug report, feedback and recommendation</h2></div>
+    <p style="margin:0 0 12px;max-width:65ch">Found a bug, or have feedback or an idea to make Riftcheese better? Send an email. For a bug, say what you did, what happened and what you expected. Screenshots help a lot.</p>
+    <div class="row"><a class="btn primary" href="${esc(bugMailto())}">Bug report</a>
+      <span class="row" style="gap:6px"><span class="small muted">No email app? Write to <b>${esc(FEEDBACK.email)}</b></span><button class="btn sm" data-act="copy-val" data-v="${esc(FEEDBACK.email)}" data-what="Email address">Copy</button></span></div>
+  </section>
+  <section class="panel">
+    <div class="panel-head"><h2>Support Riftcheese</h2></div>
+    <p style="margin:0 0 16px;max-width:65ch">Riftcheese is free and made by one player in spare time. If it helped your prep, a donation of any size keeps it going. Thank you!</p>
+    <div class="give">
+      <figure class="qr-box"><img class="qr" src="images/promptpay-qr.jpg" alt="PromptPay QR code for donations" width="510" height="508" loading="lazy">
+        <figcaption><strong>PromptPay QR</strong><span>Scan with any Thai banking app</span></figcaption></figure>
+      <dl>
+        <div><dt>KBank (Kasikornbank) transfer</dt><dd class="row"><span class="num-big">${fmtKbank(FEEDBACK.kbank)}</span><button class="btn sm" data-act="copy-val" data-v="${FEEDBACK.kbank}" data-what="Account number">Copy</button></dd></div>
+      </dl>
+    </div>
+    ${S.ui.copy ? copyBox() : ''}
+  </section>`;
+}
+
 // ---------- actions ----------
-function setTab(t) { S.ui.tab = t; S.ui.confirm = null; S.ui.copy = null; saveUI(); render(); window.scrollTo(0, 0); }
+function setTab(t) { if (t === 'feedback' && S.ui.tab !== 'feedback') S.ui.prevTab = S.ui.tab; S.ui.tab = t; S.ui.confirm = null; S.ui.copy = null; saveUI(); render(); window.scrollTo(0, 0); }
 function newDeck(base) {
   const id = uid('d');
   S.decks[id] = base ? { ...clone(base), id, name: (base.name || 'Deck') + ' (copy)', example: false, created: Date.now() }
@@ -2346,6 +2390,7 @@ document.addEventListener('click', e => {
     case 'confirm': S.ui.confirm = b.dataset.what; render(); break;
     case 'unconfirm': S.ui.confirm = null; render(); break;
     case 'close-copy': S.ui.copy = null; render(); break;
+    case 'copy-val': copyText(b.dataset.v, `${b.dataset.what || 'Text'} copied`); break;
     case 'g-res': { const g = S.form.games[+b.dataset.i]; g.r = g.r === b.dataset.v ? '' : b.dataset.v; g.auto = false; render(); break; }
     case 'g-first': { const g = S.form.games[+b.dataset.i]; g.first = g.first === b.dataset.v ? '' : b.dataset.v; render(); break; }
     case 'cancel-edit': S.form = blankForm(); S.ui.sbOpen = null; render(); break;
