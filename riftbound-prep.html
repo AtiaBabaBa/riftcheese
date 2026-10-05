@@ -141,7 +141,7 @@ td.r, th.r { text-align: right; }
 .game { display: grid; gap: 10px; }
 .game .gl { font-weight: 700; width: 58px; }
 .game-top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.game-grid { display: grid; gap: 10px; grid-template-columns: 120px minmax(0, 1fr) minmax(0, 1fr); }
+.game-grid { display: grid; gap: 10px; grid-template-columns: 120px minmax(0, 1fr) minmax(0, 1fr); align-items: start; }
 .score { display: flex; align-items: center; gap: 4px; }
 .score input { width: 52px; text-align: center; padding-inline: 4px; font-family: var(--f-mono); }
 .sbline { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
@@ -172,6 +172,19 @@ td.r, th.r { text-align: right; }
 .mlineup .lu-vs { font-size: 12px; margin-inline: 4px; }
 .bfs { display: inline-flex; align-items: center; gap: 5px; }
 .bfs .pic.bfpic { margin-top: 0; }
+.pic.pick { cursor: pointer; position: relative; }
+.pic.pick.pic-empty::after { content: '+'; position: absolute; inset: 0; display: grid; place-items: center; font-size: 22px; line-height: 1; color: var(--muted); }
+.pic.pick.pic-empty:hover .cimg, .pic.pick.pic-empty:focus-visible .cimg { border-color: var(--accent); box-shadow: none; }
+.pic.pick.pic-empty:hover::after, .pic.pick.pic-empty:focus-visible::after { color: var(--accent); }
+.modal-card.wide { width: min(860px, 100%); }
+.pk-bar { position: sticky; top: -18px; z-index: 1; margin: 0 -18px 4px; padding: 10px 18px; background: var(--panel); flex-wrap: nowrap; }
+.pk-h { margin: 12px 0 6px; }
+.pk-grid { display: grid; gap: 10px 8px; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); align-items: start; }
+.pk-grid.bf { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
+.pk { border: 1px solid transparent; background: none; border-radius: var(--r); padding: 4px; cursor: pointer; display: grid; gap: 4px; align-content: start; text-align: center; color: inherit; font: inherit; }
+.pk:hover, .pk:focus-visible { background: var(--panel-2); }
+.pk[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.pk-n { font-size: 12px; font-weight: 600; line-height: 1.25; overflow-wrap: anywhere; }
 .swap { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
 .swcol { min-width: 0; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); }
 .swhead { display: flex; justify-content: space-between; align-items: center; padding: 7px 10px; border-bottom: 1px solid var(--line); }
@@ -1244,6 +1257,69 @@ function pic(n, w, cls = '') {
   if (!c) return `<span class="pic pic-empty ${cls}" title="${esc(n || 'Not recorded')}"><span class="cimg blank" style="${w ? `width:${w}px;` : 'width:100%;'}aspect-ratio:${ratio}"></span></span>`;
   return `<button type="button" class="pic ${cls}" data-act="card-info" data-k="${esc(c.k)}" title="${esc(c.n)}">${thumb(c, w)}</button>`;
 }
+// In the match form, a card slot opens the picture picker for its field instead of the card's details.
+const PICKS = {
+  oppLegend: { title: 'Their Legend', ph: 'Search Legend or champion name' },
+  oppChamp: { title: 'Their Chosen Champion', ph: 'Search champion' },
+  myBf: { title: 'My battlefield', ph: 'Search battlefield' },
+  oppBf: { title: 'Their battlefield', ph: 'Search battlefield' },
+};
+function pickPic(n, kind, i, w, cls = '') {
+  const c = n ? findCard(n) : null, ratio = cls.includes('bfpic') ? '279/200' : '200/279', what = PICKS[kind].title.replace(/^./, x => x.toLowerCase());
+  return `<button type="button" class="pic pick${c ? '' : ' pic-empty'} ${cls}" data-act="pick-open" data-kind="${kind}" data-i="${i}" title="${c ? `${esc(c.n)} · click to change` : `Pick ${what}`}" aria-label="${c ? `${esc(c.n)}, change ${what}` : `Pick ${what}`}">${c ? thumb(c, w) : `<span class="cimg blank" style="${w ? `width:${w}px;` : 'width:100%;'}aspect-ratio:${ratio}"></span>`}</button>`;
+}
+const pickCur = p => p.kind === 'oppLegend' || p.kind === 'oppChamp' ? S.form[p.kind] : S.form.games[p.i][p.kind];
+// The cards to choose from, in groups: the likely ones first (a Legend's own champions, my deck's battlefields).
+function pickGroups(p) {
+  const f = S.form;
+  if (p.kind === 'oppLegend') return [['', CDB.legends]];
+  if (p.kind === 'oppChamp') {
+    const L = resolveLegend(f.oppLegend), tag = L && (L.g || [])[0], all = CDB.cards.filter(isChampUnit);
+    const fit = tag && !p.all ? all.filter(c => (c.g || []).includes(tag)) : [];
+    return fit.length ? [[`${tag} champions`, fit]] : [['', all]];
+  }
+  const all = CDB.cards.filter(c => c.t === 'Battlefield'), out = [];
+  const first = p.kind === 'myBf' ? parseList((S.decks[f.deckId] || {}).bf || '').map(x => x.n) : boGames(f).filter((g, j) => j !== p.i).map(g => g.oppBf);
+  const firstCards = first.map(n => n && findCard(n)).filter(c => c && c.t === 'Battlefield');
+  if (firstCards.length) out.push([p.kind === 'myBf' ? 'In your deck' : 'Earlier this match', firstCards]);
+  out.push([out.length ? 'All battlefields' : '', all]);
+  return out;
+}
+function pickListHTML() {
+  const p = S.ui.pick, q = norm(p.q), cur = cardKey(pickCur(p)), seen = new Set();
+  const hit = c => !q || norm(c.n).includes(q) || (c.g || []).some(t => norm(t).includes(q));
+  const body = pickGroups(p).map(([h, list]) => {
+    const l = list.filter(c => !seen.has(c.k) && hit(c)).sort((a, b) => a.n.localeCompare(b.n)); l.forEach(c => seen.add(c.k));
+    return l.length ? `${h ? `<h3 class="label pk-h">${esc(h)}</h3>` : ''}<div class="pk-grid${p.kind.endsWith('Bf') ? ' bf' : ''}">${l.map(c =>
+      `<button type="button" class="pk" data-act="pick" data-k="${esc(c.k)}" aria-pressed="${c.k === cur}" title="${esc(cardTip(c))}">${thumb(c, 0)}<span class="pk-n">${esc(c.n)}</span></button>`).join('')}</div>` : '';
+  }).join('');
+  const narrowed = p.kind === 'oppChamp' && !p.all && pickGroups(p)[0][0];
+  return (body || `<p class="muted">Nothing matches “${esc(p.q)}”.</p>`) + (narrowed ? `<p style="margin:12px 0 0"><button type="button" class="btn sm link" data-act="pick-all">Show every champion</button></p>` : '');
+}
+function openPicker(kind, i) {
+  if (!CDB.ok) { toast('The card database is still loading.'); return; }
+  S.ui.pick = { kind, i, q: '', all: false };
+  const m = document.getElementById('modal'), multi = kind.endsWith('Bf') && boGames(S.form).length > 1;
+  m.querySelector('.modal-card').classList.add('wide');
+  document.getElementById('modal-body').innerHTML = `<h2 id="modal-title" style="font-size:19px;margin:0 70px 0 0">${PICKS[kind].title}${multi ? ` · Game ${i + 1}` : ''}</h2>
+    <div class="row pk-bar"><input id="pk-q" type="search" placeholder="${PICKS[kind].ph}" data-bind="pick" autocomplete="off" aria-label="${PICKS[kind].ph}" style="flex:1;min-width:0">${pickCur(S.ui.pick) ? '<button type="button" class="btn sm" data-act="pick-clear">Clear</button>' : ''}</div>
+    <div id="pk-list">${pickListHTML()}</div>`;
+  m.hidden = false;
+  // Skip the search box on touch screens so the keyboard doesn't cover the pictures.
+  (matchMedia('(hover: hover)').matches ? document.getElementById('pk-q') : m.querySelector('.modal-x')).focus();
+}
+function choosePick(k) {
+  const p = S.ui.pick, f = S.form, c = k ? CDB.byKey.get(k) : null, n = c ? c.n : '';
+  if (p.kind === 'oppLegend') {
+    // A different Legend: drop a Chosen Champion that can't go with it, then pre-fill one from past matches.
+    const tag = c && (c.g || [])[0], ch = findCard(f.oppChamp);
+    if (tag && ch && !(ch.g || []).includes(tag)) f.oppChamp = '';
+    f.oppLegend = n; settleOppLegend(f);
+  } else if (p.kind === 'oppChamp') f.oppChamp = n;
+  else f.games[p.i][p.kind] = n;
+  closeCard(); render();
+  const slot = document.querySelector(`[data-act="pick-open"][data-kind="${p.kind}"][data-i="${p.i}"]`); if (slot) slot.focus({ preventScroll: true });
+}
 // My Legend/Champion for a match: what was saved with it, else the deck's current pick.
 function myLineup(m, deck) {
   return { L: m && m.myLegend != null ? m.myLegend : (deck?.legend || ''), C: m && m.myChamp != null ? m.myChamp : (deck?.champion || '') };
@@ -1274,10 +1350,10 @@ function gameRowHTML(f, g, i, deck) {
           <span class="score"><input id="f-g${i}-ms" type="number" min="0" max="99" inputmode="numeric" value="${esc(g.ms)}" data-bind="game" data-i="${i}" data-k="ms" aria-label="Game ${i + 1} my points" placeholder="0"><span>–</span><input id="f-g${i}-os" type="number" min="0" max="99" inputmode="numeric" value="${esc(g.os)}" data-bind="game" data-i="${i}" data-k="os" aria-label="Game ${i + 1} opponent points" placeholder="0"></span></div>
         <div class="field"><label class="label" for="f-g${i}-mybf">My battlefield</label>
           ${myBfField}
-          ${g.myBf ? pic(g.myBf, 96, 'bfpic') : ''}</div>
+          ${pickPic(g.myBf, 'myBf', i, 96, 'bfpic')}</div>
         <div class="field"><label class="label" for="f-g${i}-oppbf">Their battlefield</label>
           <input id="f-g${i}-oppbf" list="bf-list" value="${esc(g.oppBf)}" data-bind="game" data-i="${i}" data-k="oppBf" placeholder="Type to search">
-          ${g.oppBf ? pic(g.oppBf, 96, 'bfpic') : ''}</div>
+          ${pickPic(g.oppBf, 'oppBf', i, 96, 'bfpic')}</div>
       </div>
       ${`<div class="sbline"><button type="button" class="btn sm" data-act="fsb-toggle" data-i="${i}" aria-expanded="${open}">${open ? 'Close sideboarding' : 'My sideboarding'}</button>
         <span class="small ${sbSummary(g) ? '' : 'muted'}">${sbSummary(g) ? `${esc(sbSummary(g))}${total(g.ins) !== total(g.outs) ? ' · in and out don’t match' : ''}` : 'No changes'}</span></div>
@@ -1385,7 +1461,7 @@ function lineupFormHTML(f, deck) {
     <span class="lu-vs">vs</span>
     <div class="lu">
       <span class="label">Opponent</span>
-      <div class="lu-pics">${pic(f.oppLegend, 0)}${pic(f.oppChamp, 0)}</div>
+      <div class="lu-pics">${pickPic(f.oppLegend, 'oppLegend', 0, 0)}${pickPic(f.oppChamp, 'oppChamp', 0, 0)}</div>
       <div class="lu-names">
         <input id="f-opplegend" list="legend-list" placeholder="Their Legend" value="${esc(f.oppLegend)}" data-bind="form" data-k="oppLegend" aria-label="Opponent Legend">
         <input id="f-oppchamp" list="oppchamp-list" placeholder="Their Chosen Champion" value="${esc(f.oppChamp)}" data-bind="form" data-k="oppChamp" aria-label="Opponent Chosen Champion">
@@ -1978,7 +2054,7 @@ function openCard(k) {
   document.getElementById('modal-body').innerHTML = cardDetailHTML(); m.hidden = false;
   m.querySelector('.modal-x').focus();
 }
-function closeCard() { document.getElementById('modal').hidden = true; S.ui.cardKey = null; }
+function closeCard() { const m = document.getElementById('modal'); m.hidden = true; m.querySelector('.modal-card').classList.remove('wide'); S.ui.cardKey = null; S.ui.pick = null; }
 
 function deckbarHTML() {
   const d = curDeck(); if (!d) return 'No deck selected';
@@ -2482,6 +2558,10 @@ document.addEventListener('click', e => {
     case 'card-add': { const c = CDB.byKey.get(b.dataset.k); if (!c) break; const msg = addCard(c, S.ui.addTo); if (msg) { toast(msg); if (c.t === 'Legend') { S.ui.cf.limit = 60; render(); } else refreshBuild(); } break; }
     case 'card-info': case 'card-open': openCard(b.dataset.k); break;
     case 'modal-close': closeCard(); break;
+    case 'pick-open': openPicker(b.dataset.kind, +b.dataset.i); break;
+    case 'pick': choosePick(b.dataset.k); break;
+    case 'pick-clear': choosePick(''); break;
+    case 'pick-all': S.ui.pick.all = true; document.getElementById('pk-list').innerHTML = pickListHTML(); break;
     case 'install': installApp(); break;
     case 'install-later': lsSet(INSTALL_KEY, true); render(); break;
     case 'row': rowOp(b.dataset.op, b.dataset.sec, b.dataset.n); if (b.dataset.op === 'unlegend' && S.ui.tab === 'cards') render(); break;
@@ -2528,6 +2608,7 @@ document.addEventListener('contextmenu', e => {
 });
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && !document.getElementById('modal').hidden) { closeCard(); return; }
+  if (e.key === 'Enter' && e.target.id === 'pk-q') { e.preventDefault(); const b = document.querySelector('#pk-list .pk'); if (b) b.click(); return; }
   if (e.key === 'Escape') { const o = document.querySelector('details.ms[open]'); if (o) { o.open = false; o.querySelector('summary').focus(); return; } }
   const t = e.target;
   if ((e.key === 'Enter' || e.key === ' ') && t.classList && t.classList.contains('ccard')) { e.preventDefault(); t.click(); }
@@ -2536,6 +2617,7 @@ document.addEventListener('keydown', e => {
 document.addEventListener('input', e => {
   const el = e.target, bind = el.dataset && el.dataset.bind; if (!bind) return;
   const k = el.dataset.k, d = curDeck();
+  if (bind === 'pick') { S.ui.pick.q = el.value; document.getElementById('pk-list').innerHTML = pickListHTML(); return; }
   if (bind === 'hist') { S.ui.hq = el.value; const h = document.getElementById('hist-list'); if (h) h.innerHTML = historyListHTML(); return; }
   if (bind === 'cf') {
     S.ui.cf[k] = el.value; S.ui.cf.limit = 60; renderResults();
