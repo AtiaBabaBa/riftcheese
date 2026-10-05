@@ -15,6 +15,7 @@
   --accent: #0E6D77; --accent-ink: #FFFFFF; --accent-soft: #DCEFF0; --gold: #946511;
   --win: #1D7A4C; --win-bg: #DCF0E4; --loss: #B0362E; --loss-bg: #F6DFDB; --draw: #7A6522; --draw-bg: #F2EBD2;
   --warn: #9A5B00; --warn-bg: #FBEBD0;
+  --series-1: #2a78d6; --series-2: #eb6834; --series-3: #1baf7a;
   --fury: #D2453A; --calm: #3B9855; --mind: #3874C6; --body: #DE872B; --chaos: #8C4DC2; --order: #C29C1E;
   --f-display: "Cinzel", "Trajan Pro", Georgia, serif;
   --f-body: "Barlow", "Segoe UI", system-ui, sans-serif;
@@ -25,12 +26,14 @@
   --bg: #10131A; --panel: #171B24; --panel-2: #1D222D; --ink: #E5E9F0; --muted: #98A1B2; --line: #2A3140;
   --accent: #46C3C7; --accent-ink: #08191B; --accent-soft: #163338; --gold: #D9A84C;
   --win: #54C98B; --win-bg: #15302A; --loss: #F07C70; --loss-bg: #3A1D1B; --draw: #D8C26C; --draw-bg: #332D17;
-  --warn: #F0B35A; --warn-bg: #3A2A12; color-scheme: dark; } }
+  --warn: #F0B35A; --warn-bg: #3A2A12; color-scheme: dark;
+  --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; } }
 :root[data-theme="dark"] {
   --bg: #10131A; --panel: #171B24; --panel-2: #1D222D; --ink: #E5E9F0; --muted: #98A1B2; --line: #2A3140;
   --accent: #46C3C7; --accent-ink: #08191B; --accent-soft: #163338; --gold: #D9A84C;
   --win: #54C98B; --win-bg: #15302A; --loss: #F07C70; --loss-bg: #3A1D1B; --draw: #D8C26C; --draw-bg: #332D17;
-  --warn: #F0B35A; --warn-bg: #3A2A12; color-scheme: dark; }
+  --warn: #F0B35A; --warn-bg: #3A2A12; color-scheme: dark;
+  --series-1: #3987e5; --series-2: #d95926; --series-3: #199e70; }
 
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
@@ -269,6 +272,27 @@ td.r, th.r { text-align: right; }
 .balance.bad { background: var(--warn-bg); color: var(--warn); }
 .balance.none { background: var(--panel-2); color: var(--muted); }
 .cheat { font-family: var(--f-mono); font-size: 13px; white-space: pre-wrap; background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px; padding: 12px 14px; overflow-wrap: anywhere; max-height: 420px; overflow: auto; }
+.mi-opp { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.mitem > .num { white-space: nowrap; }
+.mrow-sb { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 2px; }
+.mi-x { width: 28px; height: 28px; border: 1px solid transparent; background: none; border-radius: 6px; cursor: pointer; color: var(--muted); font-size: 18px; line-height: 1; padding: 0; }
+.mi-x:hover, .mi-x:focus-visible { color: var(--loss); border-color: var(--line); background: var(--panel-2); }
+.mi-confirm { grid-column: 1 / -1; flex-wrap: wrap; padding: 4px 10px 8px; }
+.mi-pics { display: flex; gap: 3px; flex: none; }
+.mitem .nm .ch, .imp-row .nm .ch { display: block; font-size: 12px; font-weight: 400; color: var(--muted); }
+.sbsec { display: grid; gap: 10px; }
+.sb-side { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; }
+.bfo { display: grid; gap: 12px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.bfo-slot { display: grid; gap: 4px; align-content: start; grid-template-areas: "l" "s" "p"; }
+.bfo-slot > label { grid-area: l; } .bfo-slot > select { grid-area: s; }
+.bfo-slot > .pic { grid-area: p; display: block; width: 100%; max-width: 170px; margin-top: 2px; justify-self: start; }
+.imp-list { display: grid; gap: 2px; max-height: 55vh; overflow: auto; border-block: 1px solid var(--line); padding-block: 4px; }
+.imp-row { display: grid; grid-template-columns: auto auto minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 6px 8px; border-radius: 6px; cursor: pointer; }
+.imp-row:hover { background: var(--panel-2); }
+.imp-row.done { opacity: .6; cursor: default; }
+.imp-row input { accent-color: var(--accent); width: 16px; height: 16px; margin: 0; }
+.imp-row .nm { font-weight: 600; overflow-wrap: anywhere; }
+.imp-rec { white-space: nowrap; }
 
 /* decks */
 .decks { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
@@ -311,8 +335,6 @@ button.pill { border: 0; cursor: pointer; }
 .cnt { font-size: 12.5px; font-weight: 600; padding: 1px 7px; border-radius: 999px; background: var(--warn-bg); color: var(--warn); }
 .cnt.ok { background: var(--win-bg); color: var(--win); }
 .cnt.over { background: var(--loss-bg); color: var(--loss); }
-.drow.chosen .chosen-tag { font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--gold); border: 1px solid var(--gold); border-radius: 4px; padding: 0 4px; }
-.drow.chosen .qty1 { width: 28px; text-align: center; font-weight: 600; }
 .drow.over { background: var(--loss-bg); border-radius: 5px; }
 .drow.over .stepper span { color: var(--loss); }
 .banchip { flex: none; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--loss); border: 1px solid var(--loss); border-radius: 4px; padding: 0 4px; }
@@ -390,15 +412,38 @@ button.pill { border: 0; cursor: pointer; }
 .cdetail { display: grid; gap: 14px; }
 .cdimg { display: flex; justify-content: center; }
 .cdimg .cimg { box-shadow: 0 6px 20px rgba(0,0,0,.25); }
-.dstats { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
+.dstats { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
 .curve { display: flex; align-items: flex-end; gap: 6px; height: 130px; }
 .cbar { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 3px; min-width: 0; }
 .cbar b { width: 100%; max-width: 30px; background: var(--accent); border-radius: 3px 3px 0 0; min-height: 1px; }
-.vgrid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); margin-top: 12px; }
-.vcard { position: relative; border: 0; background: none; padding: 0; cursor: pointer; justify-self: center; }
-.vcard.sb { opacity: .8; }
-.vcard .qb { position: absolute; right: 4px; bottom: 6px; background: var(--ink); color: var(--bg); border-radius: 4px; padding: 1px 6px; font-weight: 700; font-size: 13px; }
-.vcard .sbt { position: absolute; left: 4px; top: 4px; background: var(--gold); color: var(--panel); border-radius: 4px; padding: 0 5px; font-size: 11px; font-weight: 700; }
+.pie-wrap { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.pie { width: 128px; height: 128px; flex: none; }
+.pie .pie-seg { transition: stroke-width .15s; }
+.pie .pie-seg:hover { stroke-width: 8.5; }
+.pie text { fill: var(--ink); font-family: var(--f-mono); text-anchor: middle; }
+.pie-key { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; font-size: 14px; }
+.pie-key li { display: grid; grid-template-columns: 10px minmax(48px, auto) 28px 38px; gap: 8px; align-items: center; }
+.pie-key i { width: 10px; height: 10px; border-radius: 2px; }
+.pie-key .num { text-align: right; }
+/* one-page deck picture */
+.dv { position: fixed; inset: 0; z-index: 55; background: var(--bg); display: flex; flex-direction: column; }
+.dv-bar { display: flex; align-items: center; justify-content: space-between; gap: 10px 16px; flex-wrap: wrap; padding: calc(10px + env(safe-area-inset-top, 0px)) 16px 10px; border-bottom: 1px solid var(--line); background: var(--panel); }
+.dv-bar h2 { font-size: 18px; overflow-wrap: anywhere; }
+.dv-scroll { flex: 1; overflow: auto; padding: 16px 16px calc(24px + env(safe-area-inset-bottom, 0px)); }
+.dv-sheet { max-width: 1000px; margin: 0 auto; border-radius: 12px; padding: 24px 24px 34px; display: grid; gap: 30px; }
+.dv-grid { display: grid; gap: 28px 14px; grid-template-columns: repeat(6, minmax(0, 1fr)); }
+.dv-h { color: #fff; font-size: 20px; font-weight: 700; margin: 0 0 -14px; text-shadow: 0 1px 3px rgba(0, 0, 0, .45); }
+.dv-card { position: relative; border: 0; background: none; padding: 0; cursor: pointer; display: block; color: inherit; }
+.dv-img { display: block; position: relative; aspect-ratio: 200 / 279; border-radius: 8px; overflow: hidden; background: #1D222D; box-shadow: 0 4px 14px rgba(0, 0, 0, .35); }
+.dv-img > .cimg.fluid { border-radius: 0; }
+/* Battlefields are landscape cards; they stand upright here like the rest. */
+.dv-img.bf > .cimg { position: absolute; width: 139.5%; max-width: none; left: 50%; top: 50%; transform: translate(-50%, -50%) rotate(-90deg); }
+.dv-img.dv-miss { color: #fff; font-size: 13px; font-weight: 600; padding: 10px; overflow-wrap: anywhere; text-align: left; line-height: 1.3; }
+.dv-card:hover .dv-img, .dv-card:focus-visible .dv-img { outline: 3px solid #fff; outline-offset: 2px; }
+.dv-q { position: absolute; left: 50%; bottom: -13px; transform: translateX(-50%); background: #171B24; color: #fff; border: 2px solid rgba(255, 255, 255, .85); border-radius: 8px; padding: 2px 10px; font-weight: 700; font-size: 14px; white-space: nowrap; }
+.dv-empty { color: #fff; margin: 0; }
+@media (max-width: 860px) { .dv-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (max-width: 520px) { .dv-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px 10px; } .dv-sheet { padding: 14px 12px 26px; gap: 26px; } .dv-q { font-size: 12px; padding: 1px 7px; } }
 .crow .cimg.mini { width: 30px; }
 
 /* opponents (identified by Legend) */
@@ -465,6 +510,11 @@ a.btn { display: inline-block; text-decoration: none; }
   .game .gl { width: auto; }
   .game-top .seg button { padding: 5px 9px; min-width: 30px; }
   .game-top .small { font-size: 12px; }
+  .bfo { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .bfo-slot { grid-template-columns: 96px minmax(0, 1fr); grid-template-areas: "p l" "p s"; column-gap: 10px; align-items: center; }
+  .bfo-slot > .pic { margin-top: 0; }
+  .imp-row { grid-template-columns: auto auto minmax(0, 1fr); row-gap: 2px; }
+  .imp-row .imp-rec { grid-column: 3; }
 }
 @media (max-width: 860px) {
   .log-layout, .sb-layout, .cards-layout { grid-template-columns: minmax(0, 1fr); }
@@ -536,6 +586,7 @@ a.btn { display: inline-block; text-decoration: none; }
 <datalist id="bf-list"></datalist>
 <datalist id="oppchamp-list"></datalist>
 <div id="toast" class="toast" hidden></div>
+<div id="deckview" class="dv" hidden role="dialog" aria-modal="true" aria-labelledby="dv-title"></div>
 <div id="modal" class="modal" hidden data-act="modal-close"><div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title"><button class="btn sm modal-x" data-act="modal-close">Close</button><div id="modal-body"></div></div></div>
 
 <script>
@@ -543,7 +594,8 @@ a.btn { display: inline-block; text-decoration: none; }
 'use strict';
 const DOMAINS = ['Fury','Calm','Mind','Body','Chaos','Order'];
 const LEGEND_SUGGEST = ["Ahri","Annie","Darius","Garen","Jinx","Kai'Sa","Lee Sin","Leona","Lux","Master Yi","Miss Fortune","Sett","Teemo","Viktor","Volibear","Yasuo"];
-const RULES_DEFAULT = { minMain: 40, maxCopies: 3, runes: 12, battlefields: 3, sideMax: 10, format: 'standard', winPoints: 8 };
+// A deck: 1 Legend, 1 Chosen Champion, a main deck of exactly mainSize cards besides the champion, the runes, the battlefields and up to sideMax sideboard cards.
+const RULES_DEFAULT = { mainSize: 39, maxCopies: 3, runes: 12, battlefields: 3, sideMax: 10, format: 'standard', winPoints: 8 };
 const TABS = [['log','Match log'],['history','History'],['matchups','Matchups'],['sideboard','Sideboard'],['field','Field'],['decks','Decks'],['cards','Cards'],['data','Data'],['feedback','Feedback']];
 const TYPES = ['Legend','Unit','Spell','Gear','Rune','Battlefield'];
 // Official ban list (playriftbound.com announcements), current as of 18 Sep 2026.
@@ -624,6 +676,8 @@ function bumpList(text, name, delta, max = 99) {
 function qtyIn(text, name) { const k = cardKey(name); const c = parseList(text).find(x => cardKey(x.n) === k); return c ? c.q : 0; }
 // Some Legend cards also carry the Champion supertype; only units can be a Chosen Champion.
 const isChampUnit = c => !!c && c.st === 'Champion' && c.t === 'Unit';
+// A Legend's champion: the tag its champion units are named after (Kennen's Legend is tagged Yordle first).
+const legendTag = L => { const g = (L && L.g) || []; return g.find(t => CDB.cards.some(c => isChampUnit(c) && cardKey(c.n).startsWith(cardKey(t)))) || g[0] || ''; };
 const sectionFor = c => c.t === 'Rune' ? 'runes' : c.t === 'Battlefield' ? 'bf' : 'main';
 // Storage keys, the file store and the account email domain keep the site's first name (riftprep); renaming them would orphan saved data and accounts.
 const LS_KEY = 'riftprep.local.v1', UI_KEY = 'riftprep.ui.v1', OWNER_KEY = 'riftprep.owner.v1';
@@ -653,7 +707,7 @@ const READ_SHOTS = false;
 const S = {
   decks: {}, matches: {}, settings: { id: 'main', field: [], rules: { ...RULES_DEFAULT } },
   ui: { tab: 'log', hq: '', deckId: null, guideKey: null, statsScope: 'deck', logFilter: 'deck', confirm: null, pasteOpen: false, copy: null, showChamp: false, bfOpp: '',
-    cf: { q: '', types: [], costs: [], sets: [], sort: 'name', doms: [], fits: true, limit: 60 }, cardKey: null, visual: false, addTo: 'main', drawer: false, cfList: [] },
+    cf: { q: '', types: [], costs: [], sets: [], sort: 'name', doms: [], fits: true, limit: 60 }, cardKey: null, addTo: 'main', drawer: false, cfList: [] },
   form: null,
 };
 const app = document.getElementById('app');
@@ -882,12 +936,13 @@ const today = () => { const d = new Date(); return new Date(d.getTime() - d.getT
 const pct = a => (a.W + a.L) ? a.W / (a.W + a.L) : null;
 const fmtPct = p => p == null ? '—' : Math.round(p * 100) + '%';
 const rules = () => ({ ...RULES_DEFAULT, ...(S.settings.rules || {}) });
-// Sideboard limit moved from 8 to 10; lift settings saved under the old default once.
+// Older saved rules: the sideboard limit moved from 8 to 10 (lifted once), and the main deck rule was a minimum of 40
+// counting the Chosen Champion; it's now exactly 39 without it.
 function migrateSettings() {
-  const r = S.settings.rules;
-  if (S.settings.sb10) return false;
-  if (r && r.sideMax === 8) r.sideMax = 10;
-  S.settings.sb10 = true; return true;
+  const r = S.settings.rules; let changed = false;
+  if (!S.settings.sb10) { if (r && r.sideMax === 8) r.sideMax = 10; S.settings.sb10 = true; changed = true; }
+  if (r && r.minMain != null) { if (+r.minMain !== 40) r.mainSize = Math.max(0, +r.minMain - 1); delete r.minMain; changed = true; }
+  return changed;
 }
 const clone = o => JSON.parse(JSON.stringify(o));
 
@@ -953,14 +1008,15 @@ function deckIssues(d) {
   const R = rules(), iss = [];
   const main = parseList(d.main), side = parseList(d.side), runes = parseList(d.runes), bf = parseList(d.bf);
   const champ = d.champion ? [{ n: d.champion, q: 1 }] : [];
-  const mt = total(main) + champ.length, st = total(side), rt = total(runes), bt = total(bf);
+  // The main deck count leaves out the Chosen Champion, which has its own slot.
+  const mt = total(main), st = total(side), rt = total(runes), bt = total(bf);
   if (!d.legend) iss.push(['bad', 'No Legend chosen.']);
   if (!d.champion) iss.push(['bad', 'No Chosen Champion.']);
   const banned = [...new Set([d.legend, ...champ.map(c => c.n), ...main.map(c => c.n), ...side.map(c => c.n), ...runes.map(c => c.n), ...bf.map(c => c.n)].filter(n => n && isBanned(n)).map(n => (findCard(n) || { n }).n))];
   if (banned.length) iss.push(['bad', `Banned in ${formatName()}: ${banned.join(', ')}.`]);
   const dupBf = bf.filter(c => c.q > 1).map(c => c.n);
   if (dupBf.length) iss.push(['bad', `Each battlefield must be different: ${dupBf.join(', ')}.`]);
-  if (mt < R.minMain) iss.push(['bad', `Main deck has ${mt} cards; it needs at least ${R.minMain}.`]);
+  if (mt !== R.mainSize) iss.push(['bad', `Main deck has ${mt} card${mt === 1 ? '' : 's'}; it needs exactly ${R.mainSize}, not counting the Chosen Champion.`]);
   if (rt !== R.runes) iss.push(['bad', `Rune deck has ${rt} runes; it needs exactly ${R.runes}.`]);
   if (bt !== R.battlefields) iss.push(['bad', `${bt} battlefields listed; it needs ${R.battlefields}.`]);
   if (st > R.sideMax) iss.push(['bad', `Sideboard has ${st} cards; the maximum is ${R.sideMax}.`]);
@@ -975,7 +1031,7 @@ function deckIssues(d) {
     if (L) {
       const off = [...champ, ...main, ...side, ...runes].map(c => findCard(c.n)).filter(c => c && !fitsLegend(c, L));
       if (off.length) iss.push(['bad', `Outside ${L.d.join('/')} domains: ${[...new Set(off.map(c => c.n))].join(', ')}.`]);
-      const tag = (L.g || [])[0];
+      const tag = legendTag(L);
       const ch = findCard(d.champion);
       if (d.champion && ch && (!isChampUnit(ch) || !(ch.g || []).includes(tag))) iss.push(['warn', `${ch.n} isn't a ${tag} champion unit.`]);
       const sig = [...main, ...side].map(c => findCard(c.n)).filter(c => c && c.st === 'Signature' && !(c.g || []).includes(tag));
@@ -1027,27 +1083,44 @@ function byArch(list, withChamp) {
 }
 function curDeck() { return S.decks[S.ui.deckId] || null; }
 function deckList() { return Object.values(S.decks).sort((a, b) => (a.name || '').localeCompare(b.name || '')); }
-// Every opponent Legend the prep book knows about (field, match log, guides): legend key → display name.
-function archNames() {
-  const m = new Map(), put = t => { const n = legendName(t); if (n && !m.has(norm(n))) m.set(norm(n), n); };
-  (S.settings.field || []).forEach(f => put(f.arch));
-  Object.values(S.matches).forEach(x => { const o = oppOf(x, false); if (o) put(o.legend); });
-  Object.values(S.decks).forEach(d => (d.guides || []).forEach(g => put(g.arch || g.key)));
-  return m;
-}
-function getGuide(d, key, arch, create) {
-  d.guides = d.guides || [];
-  // Guides written before opponents were tracked by Legend are keyed by the old deck name; find them through the Legend it names.
-  let g = d.guides.find(x => x.key === key) || d.guides.find(x => legendKey(x.arch || x.key) === key);
-  if (g && create && g.key !== key) { g.key = key; g.arch = arch || legendName(g.arch); }
-  if (!g && create) { g = { key, arch: arch || key, ins: [], outs: [], plan: '', play: '', draw: '', watch: '' }; d.guides.push(g); }
+// A sideboard guide is one matchup in the deck's own list: the opponent's Legend, optionally narrowed to one Chosen Champion.
+// It holds the swaps going first (ins/outs), different swaps going second when set (second), my battlefield for games 1–3 (bf) and notes.
+// Guides written before opponents were tracked by Legend only have `arch` (an old deck name); it counts as the Legend it names.
+const guideKey = (legend, champ) => legendKey(legend) + (String(champ || '').trim() ? '|' + norm(champName(champ)) : '');
+const guideOpp = g => ({ legend: legendName(g.legend || g.arch || g.key), champ: g.champ ? champName(g.champ) : '' });
+const keyOfGuide = g => { const o = guideOpp(g); return guideKey(o.legend, o.champ); };
+const guideName = g => { const o = guideOpp(g); return o.champ ? `${o.legend} · ${o.champ}` : o.legend; };
+function getGuide(d, key) { return (d && key && (d.guides || []).find(g => keyOfGuide(g) === key)) || null; }
+function addGuide(d, legend, champ) {
+  let g = getGuide(d, guideKey(legend, champ));
+  if (!g) {
+    const L = legendName(legend), C = String(champ || '').trim() ? champName(champ) : '';
+    g = { key: guideKey(L, C), legend: L, champ: C, arch: L, ins: [], outs: [], bf: [], plan: '', play: '', draw: '', watch: '' };
+    (d.guides = d.guides || []).push(g);
+  }
   return g;
 }
-function guideState(d, g) {
+// The guide for an opponent: the one for their exact champion, else the one for their Legend, else the only one for that Legend.
+function findGuide(d, legend, champ) {
+  if (!d || !String(legend || '').trim()) return null;
+  const exact = String(champ || '').trim() && getGuide(d, guideKey(legend, champ));
+  if (exact) return exact;
+  const lk = legendKey(legend), same = (d.guides || []).filter(g => legendKey(guideOpp(g).legend) === lk);
+  return same.find(g => !guideOpp(g).champ) || (same.length === 1 ? same[0] : null);
+}
+const curGuide = () => getGuide(curDeck(), S.ui.guideKey);
+const hasSwaps = s => !!(s && ((s.ins || []).length || (s.outs || []).length));
+// Going first / going second is optional per guide (off by default: one set of swaps for every game).
+// The swaps for a game: the going-second ones when I'm on the draw and the guide has them turned on.
+const byTurn = g => g.byTurn ?? !!g.second;
+const turnSecond = g => byTurn(g) ? g.second || null : null;
+const guideSwaps = (g, first) => first === 'opp' && turnSecond(g) ? g.second : { ins: g.ins || [], outs: g.outs || [] };
+const bfOrder = g => [0, 1, 2].map(i => (g.bf || [])[i] || '');
+function guideState(g) {
   if (!g) return 'none';
-  const ti = total(g.ins || []), to = total(g.outs || []);
-  if (!ti && !to) return (g.plan || g.play || g.draw || g.watch) ? 'done' : 'none';
-  return ti === to ? 'done' : 'bad';
+  const sets = [g, turnSecond(g)].filter(Boolean);
+  if (!sets.some(hasSwaps)) return (g.plan || g.play || g.draw || g.watch || bfOrder(g).some(Boolean)) ? 'done' : 'none';
+  return sets.every(s => total(s.ins || []) === total(s.outs || [])) ? 'done' : 'bad';
 }
 const hasExamples = () => Object.values(S.decks).some(d => d.example) || Object.values(S.matches).some(m => m.example) || S.settings.example;
 
@@ -1227,11 +1300,11 @@ function renderChrome() {
     ll.innerHTML = (CDB.ok ? CDB.legends.map(c => c.n) : LEGEND_SUGGEST).map(a => `<option value="${esc(a)}">`).join('');
     if (CDB.ok) ll.dataset.full = '1';
   }
-  const L = legendOf(curDeck()), tag = L && (L.g || [])[0];
+  const L = legendOf(curDeck()), tag = legendTag(L);
   document.getElementById('champ-list').innerHTML = CDB.cards.filter(c => isChampUnit(c) && (!tag || (c.g || []).includes(tag))).map(c => `<option value="${esc(c.n)}">`).join('');
   const cl = document.getElementById('card-list');
   if (CDB.ok && !cl.childElementCount) cl.innerHTML = CDB.cards.map(c => `<option value="${esc(c.n)}">`).join('');
-  const oL = S.form && resolveLegend(S.form.oppLegend), oTag = oL && (oL.g || [])[0];
+  const oL = S.form && resolveLegend(S.form.oppLegend), oTag = legendTag(oL);
   document.getElementById('oppchamp-list').innerHTML = CDB.cards.filter(c => isChampUnit(c) && (!oTag || (c.g || []).includes(oTag))).map(c => `<option value="${esc(c.n)}">`).join('');
   const bl = document.getElementById('bf-list');
   if (CDB.ok && !bl.childElementCount) bl.innerHTML = CDB.cards.filter(c => c.t === 'Battlefield').map(c => `<option value="${esc(c.n)}">`).join('');
@@ -1279,18 +1352,26 @@ const PICKS = {
   oppChamp: { title: 'Their Chosen Champion', ph: 'Search champion' },
   myBf: { title: 'My battlefield', ph: 'Search battlefield' },
   oppBf: { title: 'Their battlefield', ph: 'Search battlefield' },
+  sbLegend: { title: 'Their Legend', ph: 'Search Legend or champion name' },
+  sbChamp: { title: 'Their Chosen Champion', ph: 'Search champion' },
 };
+const isSbPick = p => p.kind === 'sbLegend' || p.kind === 'sbChamp';
 function pickPic(n, kind, i, w, cls = '') {
   const c = n ? findCard(n) : null, ratio = cls.includes('bfpic') ? '279/200' : '200/279', what = PICKS[kind].title.replace(/^./, x => x.toLowerCase());
   return `<button type="button" class="pic pick${c ? '' : ' pic-empty'} ${cls}" data-act="pick-open" data-kind="${kind}" data-i="${i}" title="${c ? `${esc(c.n)} · click to change` : `Pick ${what}`}" aria-label="${c ? `${esc(c.n)}, change ${what}` : `Pick ${what}`}">${c ? thumb(c, w) : `<span class="cimg blank" style="${w ? `width:${w}px;` : 'width:100%;'}aspect-ratio:${ratio}"></span>`}</button>`;
 }
-const pickCur = p => p.kind === 'oppLegend' || p.kind === 'oppChamp' ? S.form[p.kind] : S.form.games[p.i][p.kind];
+function pickCur(p) {
+  // Adding a new matchup starts with nothing picked; otherwise the Sideboard slots show the open guide's opponent.
+  if (isSbPick(p)) { const g = !p.add && curGuide(); return g ? guideOpp(g)[p.kind === 'sbLegend' ? 'legend' : 'champ'] : ''; }
+  return p.kind === 'oppLegend' || p.kind === 'oppChamp' ? S.form[p.kind] : S.form.games[p.i][p.kind];
+}
 // The cards to choose from, in groups: the likely ones first (a Legend's own champions, my deck's battlefields).
 function pickGroups(p) {
   const f = S.form;
-  if (p.kind === 'oppLegend') return [['', CDB.legends]];
-  if (p.kind === 'oppChamp') {
-    const L = resolveLegend(f.oppLegend), tag = L && (L.g || [])[0], all = CDB.cards.filter(isChampUnit);
+  if (p.kind === 'oppLegend' || p.kind === 'sbLegend') return [['', CDB.legends]];
+  if (p.kind === 'oppChamp' || p.kind === 'sbChamp') {
+    const legend = p.kind === 'oppChamp' ? f.oppLegend : p.add ? p.legend : guideOpp(curGuide() || {}).legend;
+    const L = resolveLegend(legend), tag = legendTag(L), all = CDB.cards.filter(isChampUnit);
     const fit = tag && !p.all ? all.filter(c => (c.g || []).includes(tag)) : [];
     return fit.length ? [[`${tag} champions`, fit]] : [['', all]];
   }
@@ -1309,26 +1390,57 @@ function pickListHTML() {
     return l.length ? `${h ? `<h3 class="label pk-h">${esc(h)}</h3>` : ''}<div class="pk-grid${p.kind.endsWith('Bf') ? ' bf' : ''}">${l.map(c =>
       `<button type="button" class="pk" data-act="pick" data-k="${esc(c.k)}" aria-pressed="${c.k === cur}" title="${esc(cardTip(c))}">${thumb(c, 0)}<span class="pk-n">${esc(c.n)}</span></button>`).join('')}</div>` : '';
   }).join('');
-  const narrowed = p.kind === 'oppChamp' && !p.all && pickGroups(p)[0][0];
+  const narrowed = (p.kind === 'oppChamp' || p.kind === 'sbChamp') && !p.all && pickGroups(p)[0][0];
   return (body || `<p class="muted">Nothing matches “${esc(p.q)}”.</p>`) + (narrowed ? `<p style="margin:12px 0 0"><button type="button" class="btn sm link" data-act="pick-all">Show every champion</button></p>` : '');
 }
-function openPicker(kind, i) {
+// `extra` carries the Sideboard's add-a-matchup steps: { add: true } for the Legend, then { add: true, legend } for the champion.
+function openPicker(kind, i, extra) {
   if (!CDB.ok) { toast('The card database is still loading.'); return; }
-  S.ui.pick = { kind, i, q: '', all: false };
+  const p = S.ui.pick = { kind, i, q: '', all: false, ...(extra || {}) };
   const m = document.getElementById('modal'), multi = kind.endsWith('Bf') && boGames(S.form).length > 1;
   m.querySelector('.modal-card').classList.add('wide');
-  document.getElementById('modal-body').innerHTML = `<h2 id="modal-title" style="font-size:19px;margin:0 70px 0 0">${PICKS[kind].title}${multi ? ` · Game ${i + 1}` : ''}</h2>
-    <div class="row pk-bar"><input id="pk-q" type="search" placeholder="${PICKS[kind].ph}" data-bind="pick" autocomplete="off" aria-label="${PICKS[kind].ph}" style="flex:1;min-width:0">${pickCur(S.ui.pick) ? '<button type="button" class="btn sm" data-act="pick-clear">Clear</button>' : ''}</div>
+  // A matchup always has a Legend; its champion can be left open ("Any champion").
+  const clear = kind === 'sbChamp' ? `<button type="button" class="btn sm" data-act="pick-clear">Any champion</button>`
+    : kind !== 'sbLegend' && pickCur(p) ? '<button type="button" class="btn sm" data-act="pick-clear">Clear</button>' : '';
+  document.getElementById('modal-body').innerHTML = `<h2 id="modal-title" style="font-size:19px;margin:0 70px 0 0">${p.add ? 'New matchup · ' : ''}${PICKS[kind].title}${multi ? ` · Game ${i + 1}` : ''}</h2>
+    ${p.add && kind === 'sbChamp' ? `<p class="small muted" style="margin:4px 0 0">Vs ${esc(legendName(p.legend))}. Pick the champion this guide is for, or <b>Any champion</b> to cover them all.</p>` : ''}
+    <div class="row pk-bar"><input id="pk-q" type="search" placeholder="${PICKS[kind].ph}" data-bind="pick" autocomplete="off" aria-label="${PICKS[kind].ph}" style="flex:1;min-width:0">${clear}</div>
     <div id="pk-list">${pickListHTML()}</div>`;
   m.hidden = false;
   // Skip the search box on touch screens so the keyboard doesn't cover the pictures.
   (matchMedia('(hover: hover)').matches ? document.getElementById('pk-q') : m.querySelector('.modal-x')).focus();
 }
+// Sideboard: a picked Legend or champion adds a matchup (two steps) or changes the open one.
+function chooseSbPick(p, c) {
+  const d = curDeck(); if (!d) return;
+  if (p.kind === 'sbLegend' && p.add) { if (c) openPicker('sbChamp', 0, { add: true, legend: c.n }); return; }
+  if (p.add) {
+    const key = guideKey(p.legend, c ? c.n : ''), had = getGuide(d, key);
+    addGuide(d, p.legend, c ? c.n : ''); S.ui.guideKey = key; closeCard();
+    if (had) toast(`${guideName(had)} is already in your list`); else persist('decks', d.id);
+    render(); return;
+  }
+  const g = curGuide(); closeCard(); if (!g) return;
+  const o = guideOpp(g);
+  let legend = o.legend, champ = c ? c.n : '';
+  if (p.kind === 'sbLegend') {
+    if (!c) return;
+    // A different Legend keeps the champion only if it can go with it.
+    const tag = legendTag(c), ch = findCard(o.champ);
+    legend = c.n; champ = ch && tag && (ch.g || []).includes(tag) ? o.champ : '';
+  }
+  const key = guideKey(legend, champ), other = getGuide(d, key);
+  if (other && other !== g) { toast(`${guideName(other)} is already in your list`); S.ui.guideKey = key; render(); return; }
+  Object.assign(g, { key, legend: legendName(legend), champ: champ ? champName(champ) : '', arch: legendName(legend) });
+  S.ui.guideKey = key; persist('decks', d.id); render();
+  document.querySelector(`[data-act="pick-open"][data-kind="${p.kind}"]`)?.focus({ preventScroll: true });
+}
 function choosePick(k) {
   const p = S.ui.pick, f = S.form, c = k ? CDB.byKey.get(k) : null, n = c ? c.n : '';
+  if (isSbPick(p)) { chooseSbPick(p, c); return; }
   if (p.kind === 'oppLegend') {
     // A different Legend: drop a Chosen Champion that can't go with it, then pre-fill one from past matches.
-    const tag = c && (c.g || [])[0], ch = findCard(f.oppChamp);
+    const tag = legendTag(c), ch = findCard(f.oppChamp);
     if (tag && ch && !(ch.g || []).includes(tag)) f.oppChamp = '';
     f.oppLegend = n; settleOppLegend(f);
   } else if (p.kind === 'oppChamp') f.oppChamp = n;
@@ -1400,7 +1512,8 @@ function swapHTML(deck, ins, outs, attrs) {
       ? `<div class="swrow${moved ? ' moved in' : ''}" title="${esc(cardTip(cd))}">${qty}${pic}${name}${tag}<button type="button" class="arrow" data-act="swap" data-dir="out" data-card="${esc(c.n)}" ${attrs} aria-label="Move one ${esc(c.n)} to sideboard" title="To sideboard">→</button></div>`
       : `<div class="swrow side${moved ? ' moved out' : ''}" title="${esc(cardTip(cd))}"><button type="button" class="arrow" data-act="swap" data-dir="in" data-card="${esc(c.n)}" ${attrs} aria-label="Bring one ${esc(c.n)} into main deck" title="To main deck">←</button>${qty}${pic}${name}${tag}</div>`;
   };
-  const mainCount = total(mainNow) + (deck.champion ? 1 : 0);
+  // The main deck count leaves out the Chosen Champion, listed first with its tag.
+  const mainCount = total(mainNow);
   return `<div class="swap">
     <div class="swcol"><div class="swhead"><span class="label">Main deck</span><span class="num small">${mainCount}</span></div>
       <div class="swlist">${deck.champion ? `<div class="swrow chosen"><span class="swq num">1</span>${CDB.ok ? thumb(findCard(deck.champion), 26, 'mini') : ''}<span class="cn">${esc(deck.champion)}</span><span class="chosen-tag">Chosen</span><span></span></div>` : ''}${mainNow.map(c => row(c, 'main')).join('') || '<p class="small muted">No main deck listed.</p>'}</div></div>
@@ -1416,13 +1529,15 @@ function swapMove(ins, outs, n, dir) {
   if (dir === 'out') { if (!dec(ins)) inc(outs); } else { if (!dec(outs)) inc(ins); }
   return [ins.filter(x => x.q > 0), outs.filter(x => x.q > 0)];
 }
+// Ins and outs in a fixed order, to tell whether two sets of swaps are the same.
+const sortSwaps = s => ['ins', 'outs'].map(k => (s[k] || []).filter(x => x.q > 0).map(x => [cardKey(x.n), x.q]).sort((a, b) => a[0].localeCompare(b[0])));
 function fsbEditorHTML(f, g, i, deck) {
   if (!deck) return '<p class="small muted">Pick your deck first.</p>';
-  const guide = f.oppLegend.trim() && getGuide(deck, legendKey(f.oppLegend));
+  const guide = findGuide(deck, f.oppLegend, f.oppChamp);
   const ti = total(g.ins), to = total(g.outs);
   return `<div class="fsb">
     <div class="row">
-      ${guide && ((guide.ins || []).length || (guide.outs || []).length) ? `<button type="button" class="btn sm" data-act="fsb-guide" data-i="${i}">Use my guide vs ${esc(legendName(guide.arch))}</button>` : `<span class="small muted">No sideboard guide for this opponent yet.</span>`}
+      ${guide && hasSwaps(guideSwaps(guide, g.first)) ? `<button type="button" class="btn sm" data-act="fsb-guide" data-i="${i}">Use my guide vs ${esc(guideName(guide))}${turnSecond(guide) ? ` · ${g.first === 'opp' ? 'going second' : 'going first'}` : ''}</button>` : `<span class="small muted">No sideboard guide for this opponent yet.</span>`}
       ${i > 0 ? `<button type="button" class="btn sm" data-act="fsb-copy" data-i="${i}">Same as game ${i}</button>` : ''}
       ${ti || to ? `<button type="button" class="btn sm link" data-act="fsb-clear" data-i="${i}">Clear</button>` : ''}
     </div>
@@ -1601,7 +1716,7 @@ function viewMatchups() {
   const d = curDeck();
   const tile = (label, p, sub) => `<div class="tile"><span class="label">${label}</span><span class="v">${fmtPct(p)}</span><span class="s num">${sub}</span></div>`;
   const rows = groups.map(g => {
-    const gs = d && !all ? guideState(d, getGuide(d, g.lkey)) : null;
+    const gc = g.withChamp ? g.champ : '', gs = d && !all ? guideState(getGuide(d, guideKey(g.legend, gc))) : null;
     return `<tr>
       <td><div class="opp-cell">${pic(g.legend, 34)}${g.withChamp ? pic(g.champ, 34) : ''}<span class="nm">${esc(g.legend)}${g.withChamp ? `<span class="ch">${esc(g.champ || 'Champion not recorded')}</span>` : ''}${g.n < 5 ? '<span class="pill N" title="Fewer than 5 matches">small sample</span>' : ''}</span></div></td>
       <td class="num">${rec(g.a.m)}</td>
@@ -1611,7 +1726,7 @@ function viewMatchups() {
       <td>${wrCell(pct(g.a.post))}</td>
       <td class="num">${fmtPct(pct(g.a.play))}</td>
       <td class="num">${fmtPct(pct(g.a.draw))}</td>
-      <td><div class="row" style="flex-wrap:nowrap"><button class="btn sm" data-act="bf-show" data-key="${esc(g.key)}">Battlefields</button>${all ? '' : `<button class="btn sm" data-act="open-guide" data-key="${esc(g.lkey)}">${gs === 'done' ? 'Guide ✓' : gs === 'bad' ? 'Guide (unbalanced)' : 'Write guide'}</button>`}</div></td>
+      <td><div class="row" style="flex-wrap:nowrap"><button class="btn sm" data-act="bf-show" data-key="${esc(g.key)}">Battlefields</button>${all ? '' : `<button class="btn sm" data-act="open-guide" data-legend="${esc(g.legend)}" data-champ="${esc(gc)}">${gs === 'done' ? 'Guide ✓' : gs === 'bad' ? 'Guide (unbalanced)' : 'Write guide'}</button>`}</div></td>
     </tr>`;
   }).join('');
   return `
@@ -1671,79 +1786,127 @@ function bfMatrixHTML(list, groups) {
   return `<section class="panel" id="bf-panel"><div class="panel-head"><h2>Battlefields</h2><span class="small muted">Your battlefield against theirs, game by game</span></div>${picker}${body}</section>`;
 }
 
-// --- Sideboard
+/// --- Sideboard
+// The deck's own list of matchups: added by hand (a Legend, optionally one Chosen Champion) or imported from the
+// match log on request. Each holds the swaps going first and going second, the battlefield order for a best of 3, and notes.
 function viewSideboard() {
   const d = curDeck();
   if (!d) return noDeckEmpty('Sideboard guides belong to a deck.');
-  const names = archNames(), mine = Object.values(S.matches).filter(m => m.deckId === d.id), groups = byArch(mine, false);
-  const keys = [...names.keys()];
-  if (!S.ui.guideKey || !names.has(S.ui.guideKey)) S.ui.guideKey = keys[0] || null;
-  const list = keys.map(k => {
-    const a = groups.has(k) ? aggregate(groups.get(k).list).m : null;
-    const st = guideState(d, getGuide(d, k));
-    return `<button class="mitem" data-act="pick-guide" data-key="${esc(k)}" aria-current="${k === S.ui.guideKey}">
-      <span class="row" style="flex-wrap:nowrap;min-width:0"><span class="st ${st === 'done' ? 'done' : st === 'bad' ? 'bad' : ''}" title="${st === 'done' ? 'Guide ready' : st === 'bad' ? 'Ins and outs don\'t match' : 'No guide yet'}"></span><span class="nm">${esc(names.get(k))}</span></span>
-      <span class="small num muted">${a ? rec(a) : ''}</span></button>`;
+  const guides = d.guides || [], mine = Object.values(S.matches).filter(m => m.deckId === d.id);
+  const byL = byArch(mine, false), byC = byArch(mine, true);
+  // Record against a matchup: every match vs that Legend, or only those vs that champion.
+  const recOf = key => { const grp = (key.includes('|') ? byC : byL).get(key); return grp ? aggregate(grp.list) : null; };
+  if (!getGuide(d, S.ui.guideKey)) S.ui.guideKey = guides.length ? keyOfGuide(guides[0]) : null;
+  const list = guides.map(g => {
+    const o = guideOpp(g), key = keyOfGuide(g), st = guideState(g), a = recOf(key);
+    // Each row has its own remove button, asking once before the guide and its notes go.
+    const asking = S.ui.confirm === 'guide-del:' + key;
+    return `<div class="mrow-sb"><button class="mitem" data-act="pick-guide" data-key="${esc(key)}" aria-current="${key === S.ui.guideKey}">
+      <span class="mi-opp"><span class="st ${st}" title="${st === 'done' ? 'Guide ready' : st === 'bad' ? 'Ins and outs don\'t match' : 'No guide yet'}"></span>
+        <span class="mi-pics">${thumb(findCard(o.legend), 24, 'mini')}${thumb(findCard(o.champ), 24, 'mini')}</span>
+        <span class="nm">${esc(o.legend)}<span class="ch">${esc(o.champ || 'Any champion')}</span></span></span>
+      <span class="small num muted">${a ? rec(a.m) : ''}</span></button>
+      <button class="mi-x" data-act="confirm" data-what="guide-del:${esc(key)}" aria-label="Remove ${esc(guideName(g))}" title="Remove matchup">×</button>
+      ${asking ? `<span class="confirm mi-confirm">Remove ${esc(guideName(g))} and its notes? <button class="btn sm danger" data-act="sb-del" data-key="${esc(key)}">Remove</button><button class="btn sm" data-act="unconfirm">Keep</button></span>` : ''}</div>`;
   }).join('');
-  const side = parseList(d.side), main = parseList(d.main);
+  const addBtns = cls => `<button class="btn ${cls} primary" data-act="sb-add">Add matchup</button><button class="btn ${cls}" data-act="sb-import">Import from Matchups</button>`;
+  const g = curGuide();
   let editor = '';
-  if (S.ui.guideKey) {
-    const key = S.ui.guideKey, arch = names.get(key);
-    const g = getGuide(d, key) || { ins: [], outs: [], plan: '', play: '', draw: '', watch: '' };
-    const ti = total(g.ins || []), to = total(g.outs || []);
-    const stale = [...(g.ins || []).filter(x => !side.some(c => norm(c.n) === norm(x.n))), ...(g.outs || []).filter(x => !main.some(c => norm(c.n) === norm(x.n)))];
+  if (g) {
+    const o = guideOpp(g), side = parseList(d.side), main = parseList(d.main);
+    const turns = byTurn(g), second = turns && S.ui.sbSide === 'second', sw = guideSwaps(g, second ? 'opp' : 'me');
+    const ti = total(sw.ins), to = total(sw.outs);
+    const stale = [...new Set([g, turnSecond(g)].filter(Boolean).flatMap(s => [...(s.ins || []).filter(x => !side.some(c => norm(c.n) === norm(x.n))), ...(s.outs || []).filter(x => !main.some(c => norm(c.n) === norm(x.n)))]).map(x => x.n))];
     const bal = !ti && !to ? `<div class="balance none">No changes yet. Send cards to the sideboard with → and bring replacements in with ←.</div>`
-      : ti === to ? `<div class="balance ok">In ${ti} · Out ${to} · deck stays at ${total(main) + (d.champion ? 1 : 0)} cards</div>`
+      : ti === to ? `<div class="balance ok">In ${ti} · Out ${to} · main deck stays at ${total(main)} cards</div>`
       : `<div class="balance bad">In ${ti} · Out ${to} · ${ti > to ? `take out ${ti - to} more` : `bring in ${to - ti} more, or put ${to - ti} back`}</div>`;
-    const a = groups.has(key) ? aggregate(groups.get(key).list) : null;
+    const sideNote = g.second ? (second ? 'Different from going first.' : 'Going second has its own swaps.')
+      : second ? 'Same as going first until you change something here.' : 'These swaps also apply going second.';
+    const a = recOf(keyOfGuide(g));
+    // My battlefield for each game of a best of 3, from the deck's battlefields (plus any planned before the deck changed).
+    const order = bfOrder(g), opts = [...new Set([...parseList(d.bf).map(x => bfName(x.n)), ...order].filter(Boolean))];
+    const bfHTML = opts.length ? `<div class="bfo">${order.map((n, i) => `<div class="bfo-slot"><label class="label" for="g-bf${i}">Game ${i + 1}</label>
+        <select id="g-bf${i}" data-bind="gbf" data-i="${i}"><option value="">—</option>${opts.map(x => `<option value="${esc(x)}"${x === n ? ' selected' : ''}>${esc(x)}</option>`).join('')}</select>
+        ${pic(n, 0, 'bfpic')}</div>`).join('')}</div>`
+      : `<p class="small muted" style="margin:0">Add your battlefields to this deck to plan which one to play each game. <button class="btn sm link" data-act="tab" data-tab="decks">Edit deck</button></p>`;
     editor = `
     <section class="panel">
       <div class="panel-head">
-        <div><div class="label">${esc(d.name || 'Untitled deck')} vs</div><h2 class="section-title">${esc(arch)}</h2></div>
-        <div class="row">${a ? `<span class="pill ${pct(a.m) == null ? 'N' : pct(a.m) >= .5 ? 'W' : 'L'}">${rec(a.m)} matches</span><span class="small muted num">G1 ${fmtPct(pct(a.g1))} · post-board ${fmtPct(pct(a.post))}</span>` : '<span class="small muted">No matches logged vs this deck yet</span>'}</div>
+        <div><div class="label">${esc(d.name || 'Untitled deck')} vs</div><h2 class="section-title">${esc(o.legend)}</h2></div>
+        <div class="row">${a ? `<span class="pill ${pct(a.m) == null ? 'N' : pct(a.m) >= .5 ? 'W' : 'L'}">${rec(a.m)} matches</span><span class="small muted num">G1 ${fmtPct(pct(a.g1))} · post-board ${fmtPct(pct(a.post))}</span>` : '<span class="small muted">No matches logged vs this matchup yet</span>'}
+          ${S.ui.confirm === 'guide-del' ? `<span class="confirm">Remove this matchup and its notes? <button class="btn sm danger" data-act="sb-del">Remove</button><button class="btn sm" data-act="unconfirm">Keep</button></span>` : '<button class="btn sm" data-act="confirm" data-what="guide-del">Remove</button>'}</div>
       </div>
-      <div style="display:grid;gap:14px">
-        ${bal}
-        ${stale.length ? `<div class="balance bad">Not in the current list: ${stale.map(x => esc(x.n)).join(', ')}. <button class="btn sm" data-act="g-prune">Remove from guide</button></div>` : ''}
-        <p class="small muted" style="margin:0">Your deck after sideboarding. Use → to send a card to the sideboard and ← to bring one in.</p>
-        ${swapHTML(d, g.ins || [], g.outs || [], 'data-ctx="guide"')}
+      <div style="display:grid;gap:18px">
+        <div class="lineup">
+          <div class="lu">
+            <span class="label">You</span>
+            <div class="lu-pics">${pic(d.legend, 0)}${pic(d.champion, 0)}</div>
+            <div class="lu-names small"><span>${esc(d.legend || 'No Legend')}</span><span class="muted">${esc(d.champion || 'No Chosen Champion')}</span>${!d.legend || !d.champion ? '<button type="button" class="btn sm link" data-act="tab" data-tab="cards">Set in deckbuilder</button>' : ''}</div>
+          </div>
+          <span class="lu-vs">vs</span>
+          <div class="lu">
+            <span class="label">Opponent</span>
+            <div class="lu-pics">${pickPic(o.legend, 'sbLegend', 0, 0)}${pickPic(o.champ, 'sbChamp', 0, 0)}</div>
+            <div class="lu-names small"><span>${esc(o.legend)}</span><span class="muted">${esc(o.champ || 'Any Chosen Champion')}</span><span class="muted">Tap a picture to change it.</span></div>
+          </div>
+        </div>
+        <div class="sbsec"><h3 class="label">Battlefield order · best of 3</h3>${bfHTML}</div>
+        <div class="sbsec">
+          <h3 class="label">Sideboarding</h3>
+          <label class="row small" style="cursor:pointer;gap:8px"><input type="checkbox" data-act="sb-turns"${turns ? ' checked' : ''} style="accent-color:var(--accent);width:16px;height:16px;margin:0"> Different plans going first and going second</label>
+          ${turns ? `<div class="sb-side"><span class="seg" role="group" aria-label="Sideboarding when"><button class="N" data-act="sb-side" data-v="first" aria-pressed="${!second}">Going first</button><button class="N" data-act="sb-side" data-v="second" aria-pressed="${second}">Going second</button></span>
+            <span class="small muted">${sideNote}</span>${g.second && second ? '<button class="btn sm link" data-act="sb-same">Use the going-first swaps</button>' : ''}</div>` : ''}
+          ${bal}
+          ${stale.length ? `<div class="balance bad">Not in the current list: ${stale.map(esc).join(', ')}. <button class="btn sm" data-act="g-prune">Remove from guide</button></div>` : ''}
+          <p class="small muted" style="margin:0">Your deck after sideboarding${turns ? (second ? ' when going second' : ' when going first') : ''}. Use → to send a card to the sideboard and ← to bring one in.</p>
+          ${swapHTML(d, sw.ins, sw.outs, 'data-ctx="guide"')}
+        </div>
         <div class="grid">
           <div class="field"><label class="label" for="g-plan">Game plan</label><textarea id="g-plan" rows="3" data-bind="guide" data-k="plan" placeholder="Who is the beatdown, how the matchup is won">${esc(g.plan)}</textarea></div>
           <div class="field"><label class="label" for="g-watch">Watch out for</label><textarea id="g-watch" rows="3" data-bind="guide" data-k="watch" placeholder="Their key cards, tricks to play around">${esc(g.watch)}</textarea></div>
-          <div class="field"><label class="label" for="g-play">Going first</label><textarea id="g-play" rows="2" data-bind="guide" data-k="play" placeholder="Changes or mulligan when on the play">${esc(g.play)}</textarea></div>
-          <div class="field"><label class="label" for="g-draw">Going second</label><textarea id="g-draw" rows="2" data-bind="guide" data-k="draw" placeholder="Changes or mulligan when on the draw">${esc(g.draw)}</textarea></div>
+          ${turns || g.play || g.draw ? `<div class="field"><label class="label" for="g-play">Going first</label><textarea id="g-play" rows="2" data-bind="guide" data-k="play" placeholder="Mulligan and plan when on the play">${esc(g.play)}</textarea></div>
+          <div class="field"><label class="label" for="g-draw">Going second</label><textarea id="g-draw" rows="2" data-bind="guide" data-k="draw" placeholder="Mulligan and plan when on the draw">${esc(g.draw)}</textarea></div>` : ''}
         </div>
       </div>
     </section>`;
   } else {
-    editor = `<section class="panel"><div class="empty"><h3>No opponents yet</h3><p>Add the Legends you expect to face on the left, or list them in the Field tab. Opponents from your match log show up here automatically.</p></div></section>`;
+    editor = `<section class="panel"><div class="empty"><h3>No matchups yet</h3><p>Add the opponents you're preparing for: pick their Legend and, if you want, one Chosen Champion. Or bring in the opponents from your match log.</p><div class="row" style="justify-content:center">${addBtns('')}</div></div></section>`;
   }
   const sheet = cheatSheet(d);
   return `
   <div class="sb-layout">
     <aside class="panel" style="padding:12px">
       <div class="label" style="padding:4px 8px 8px">Matchups</div>
-      <div class="mlist">${list}</div>
-      <form id="add-arch" class="row" style="margin-top:10px;flex-wrap:nowrap" autocomplete="off"><input id="new-arch" list="legend-list" placeholder="Add opponent Legend"><button class="btn sm" type="submit">Add</button></form>
+      ${list ? `<div class="mlist">${list}</div>` : '<p class="small muted" style="margin:0 8px">None yet.</p>'}
+      <div class="row" style="margin-top:12px">${addBtns('sm')}</div>
+      ${guides.length > 1 ? `<div class="row" style="margin-top:8px">${S.ui.confirm === 'guide-del-all'
+        ? `<span class="confirm" style="flex-wrap:wrap">Remove all ${guides.length} matchups and their notes? <button class="btn sm danger" data-act="sb-del-all">Remove all</button><button class="btn sm" data-act="unconfirm">Keep</button></span>`
+        : '<button class="btn sm link danger" data-act="confirm" data-what="guide-del-all">Remove all</button>'}</div>` : ''}
     </aside>
     <div style="display:grid;gap:20px;min-width:0">
       ${editor}
       <section class="panel">
-        <div class="panel-head"><h2>Cheat sheet</h2><button class="btn sm" data-act="copy-sheet">Copy as text</button></div>
+        <div class="panel-head"><h2>Cheat sheet</h2><div class="row"><button class="btn sm" data-act="copy-sheet">Copy as text</button><button class="btn sm" data-act="sb-xlsx">Download spreadsheet (.xlsx)</button></div></div>
         ${sheet ? `<div class="cheat">${esc(sheet)}</div>` : '<p class="muted small">Your ins and outs for every matchup will collect here as one list to keep on your phone between rounds.</p>'}
+        <p class="small muted" style="margin:10px 0 0">The spreadsheet has your deck list, then two columns per matchup, 1st (going first) and 2nd (going second): copies taken out on the main deck rows, copies brought in on the sideboard rows, and the game to play each battlefield.</p>
         ${S.ui.copy ? copyBox() : ''}
       </section>
     </div>
   </div>`;
 }
 function cheatSheet(d) {
-  const gs = (d.guides || []).filter(g => (g.ins || []).length || (g.outs || []).length || g.plan || g.play || g.draw || g.watch);
+  const gs = (d.guides || []).filter(g => hasSwaps(g) || hasSwaps(turnSecond(g)) || g.plan || g.play || g.draw || g.watch || bfOrder(g).some(Boolean));
   if (!gs.length) return '';
   const lines = [`${d.name || 'Deck'} · sideboard guide`, ''];
-  gs.map(g => ({ ...g, arch: legendName(g.arch || g.key) })).sort((a, b) => a.arch.localeCompare(b.arch)).forEach(g => {
-    lines.push(`vs ${g.arch}`);
-    if ((g.ins || []).length) lines.push('  IN   ' + g.ins.map(x => `+${x.q} ${x.n}`).join(', '));
-    if ((g.outs || []).length) lines.push('  OUT  ' + g.outs.map(x => `-${x.q} ${x.n}`).join(', '));
+  const swaps = (s, tag) => {
+    if ((s.ins || []).length) lines.push(`  ${tag}IN   ` + s.ins.map(x => `+${x.q} ${x.n}`).join(', '));
+    if ((s.outs || []).length) lines.push(`  ${tag}OUT  ` + s.outs.map(x => `-${x.q} ${x.n}`).join(', '));
+  };
+  gs.map(g => ({ g, name: guideName(g) })).sort((a, b) => a.name.localeCompare(b.name)).forEach(({ g, name }) => {
+    lines.push(`vs ${name}`);
+    if (turnSecond(g)) { swaps(g, '1st '); swaps(g.second, '2nd '); } else swaps(g, '');
+    const bf = bfOrder(g).map((n, i) => n ? `G${i + 1} ${n}` : '').filter(Boolean);
+    if (bf.length) lines.push('  BF   ' + bf.join(' · '));
     if (g.plan) lines.push('  Plan: ' + g.plan.replace(/\s*\n\s*/g, ' / '));
     if (g.watch) lines.push('  Watch: ' + g.watch.replace(/\s*\n\s*/g, ' / '));
     if (g.play) lines.push('  1st: ' + g.play.replace(/\s*\n\s*/g, ' / '));
@@ -1751,6 +1914,33 @@ function cheatSheet(d) {
     lines.push('');
   });
   return lines.join('\n').trim();
+}
+// Import from Matchups: opponents from this deck's match log, one per Legend or per Legend and Chosen Champion.
+function openImport() {
+  S.ui.imp = { split: true };
+  const m = document.getElementById('modal');
+  m.querySelector('.modal-card').classList.add('wide');
+  document.getElementById('modal-body').innerHTML = importHTML(); m.hidden = false;
+  m.querySelector('.modal-x').focus();
+}
+function importHTML() {
+  const d = curDeck(), split = S.ui.imp.split;
+  const mine = Object.values(S.matches).filter(m => m.deckId === d.id);
+  const rows = [...byArch(mine, split).values()].map(g => ({ legend: g.legend, champ: split ? g.champ : '', n: g.list.length, a: aggregate(g.list).m }))
+    .map(r => ({ ...r, inList: !!getGuide(d, guideKey(r.legend, r.champ)) }))
+    .sort((x, y) => y.n - x.n || x.legend.localeCompare(y.legend) || x.champ.localeCompare(y.champ));
+  const left = rows.filter(r => !r.inList).length;
+  const body = rows.length ? `<div class="imp-list" id="imp-list">${rows.map(r => `<label class="imp-row${r.inList ? ' done' : ''}">
+      <input type="checkbox" data-legend="${esc(r.legend)}" data-champ="${esc(r.champ)}" checked${r.inList ? ' disabled' : ''}>
+      <span class="mi-pics">${thumb(findCard(r.legend), 30, 'mini')}${split ? thumb(findCard(r.champ), 30, 'mini') : ''}</span>
+      <span class="nm">${esc(r.legend)}${split ? `<span class="ch">${esc(r.champ || 'Any champion (not recorded)')}</span>` : ''}</span>
+      <span class="small num muted imp-rec">${r.inList ? 'In your list' : `${rec(r.a)} · ${r.n} match${r.n === 1 ? '' : 'es'}`}</span></label>`).join('')}</div>`
+    : `<div class="empty"><h3>No matches recorded with this deck</h3><p>Opponents you play in the Match log show up here, ready to add to your sideboard list.</p></div>`;
+  return `<h2 id="modal-title" style="font-size:19px;margin:0 70px 4px 0">Import from Matchups</h2>
+    <p class="small muted" style="margin:0 0 12px">Opponents from your match log with ${esc(d.name || 'this deck')}. Untick any you don't want in your sideboard list.</p>
+    ${rows.length ? `<label class="row small" style="margin-bottom:10px;cursor:pointer"><input type="checkbox" data-act="imp-split"${split ? ' checked' : ''} style="accent-color:var(--accent);width:16px;height:16px;margin:0"> One matchup per Chosen Champion</label>` : ''}
+    ${body}
+    ${rows.length ? `<div class="row" style="margin-top:14px"><button class="btn primary" data-act="imp-go"${left ? '' : ' disabled'}>${left ? 'Add ticked matchups' : 'All already in your list'}</button></div>` : ''}`;
 }
 function copyBox() {
   return `<div class="copybox"><span class="small muted">Copying isn't available here. Select the text below and copy it.</span><textarea id="copy-fallback" readonly>${esc(S.ui.copy)}</textarea><div><button class="btn sm" data-act="close-copy">Done</button></div></div>`;
@@ -1826,6 +2016,7 @@ function viewDecks() {
           <button class="btn sm primary" data-act="save-deck">Save deck</button>
           <button class="btn sm" data-act="paste-toggle">${S.ui.pasteOpen ? 'Close import' : 'Paste deck list'}</button>
           <button class="btn sm" data-act="copy-deck">Copy list</button>
+          <button class="btn sm" data-act="dv-open">Deck on one page</button>
           <button class="btn sm" data-act="dup-deck">Duplicate</button>
           ${conf ? `<span class="confirm">Delete this deck? Its matches stay in the log. <button class="btn sm danger" data-act="del-deck">Delete</button><button class="btn sm" data-act="unconfirm">Keep</button></span>` : `<button class="btn sm danger" data-act="confirm" data-what="deck">Delete</button>`}
         </div>
@@ -1848,7 +2039,7 @@ function viewDecks() {
       </form>` : ''}
       <div style="margin-bottom:16px"><div class="label" style="margin-bottom:6px">Domains</div><div class="row">${DOMAINS.map(dm => `<button class="dom-toggle dom" data-act="dom" data-v="${dm}" aria-pressed="${(d.domains || []).includes(dm)}"><i style="background:var(--${dm.toLowerCase()})"></i>${dm}</button>`).join('')}</div></div>
       <div class="sections">
-        ${[['main', 'Main deck (Chosen Champion counts automatically, so leave it out here)'], ['side', 'Sideboard'], ['runes', 'Rune deck'], ['bf', 'Battlefields']].map(([k, n]) => `
+        ${[['main', `Main deck (${rules().mainSize} cards; the Chosen Champion goes in its own slot above)`], ['side', 'Sideboard'], ['runes', 'Rune deck'], ['bf', 'Battlefields']].map(([k, n]) => `
           <div class="field"><div class="sec-head"><label class="label" for="d-${k}">${n}</label><span class="small num muted" id="cnt-${k}"></span></div>
           <textarea id="d-${k}" class="list" data-bind="deck" data-k="${k}" spellcheck="false" style="min-height:${k === 'main' ? 300 : 150}px" placeholder="${k === 'runes' ? '6 Fury Rune\n6 Chaos Rune' : '3 Card Name'}">${esc(d[k])}</textarea></div>`).join('')}
       </div>
@@ -1867,7 +2058,7 @@ function renderDeckCheck() {
   const d = curDeck(), el = document.getElementById('deck-check'); if (!d || !el) return;
   const R = rules(), v = deckIssues(d);
   const set = (id, t) => { const e = document.getElementById(id); if (e) e.textContent = t; };
-  set('cnt-main', `${v.mt} / ${R.minMain}+`); set('cnt-side', `${v.st} / ${R.sideMax} max`); set('cnt-runes', `${v.rt} / ${R.runes}`); set('cnt-bf', `${v.bt} / ${R.battlefields}`);
+  set('cnt-main', `${v.mt} / ${R.mainSize}`); set('cnt-side', `${v.st} / ${R.sideMax} max`); set('cnt-runes', `${v.rt} / ${R.runes}`); set('cnt-bf', `${v.bt} / ${R.battlefields}`);
   el.innerHTML = v.iss.length
     ? `<ul class="issues">${v.iss.map(([t, m]) => `<li><span class="pill ${t === 'bad' ? 'bad' : 'N'}">${t === 'bad' ? 'Illegal' : 'Check'}</span><span>${esc(m)}</span></li>`).join('')}</ul>`
     : `<ul class="issues"><li><span class="pill ok">Legal</span><span>Deck matches the format rules set in the Data tab.</span></li></ul>`;
@@ -1875,27 +2066,164 @@ function renderDeckCheck() {
 }
 function deckStatsHTML(d, v) {
   if (!CDB.ok) return '';
-  const main = [...v.champ, ...v.main].map(c => ({ ...c, c: findCard(c.n) })).filter(x => x.c);
+  // The Chosen Champion is played too, so it counts here alongside the main deck (except in the pie chart).
+  const main = [...v.champ.map(c => ({ ...c, chosen: true })), ...v.main].map(c => ({ ...c, c: findCard(c.n) })).filter(x => x.c);
   if (!main.length) return '';
-  const curve = new Array(8).fill(0), types = {}, doms = {};
-  main.forEach(({ q, c }) => {
+  const curve = new Array(8).fill(0), types = { Unit: 0, Spell: 0, Gear: 0 }, power = {};
+  main.forEach(({ q, c, chosen }) => {
     if (c.e != null) curve[Math.min(7, c.e)] += q;
-    const t = isChampUnit(c) ? 'Champion unit' : c.st === 'Signature' ? 'Signature ' + c.t.toLowerCase() : c.t; types[t] = (types[t] || 0) + q;
-    c.d.forEach(x => { doms[x] = (doms[x] || 0) + q; });
+    // The card's own type decides: a signature spell is a spell, a champion unit a unit. The pie is the main deck only.
+    if (c.t in types && !chosen) types[c.t] += q;
+    if (c.p) c.d.forEach(x => { power[x] = (power[x] || 0) + q; });
   });
   const mx = Math.max(1, ...curve);
   const bars = curve.map((n, i) => `<div class="cbar"><span class="num small">${n || ''}</span><b style="height:${Math.round(n / mx * 90)}px"></b><span class="num small muted">${i === 7 ? '7+' : i}</span></div>`).join('');
-  const visual = S.ui.visual ? `<div class="vgrid">${[...v.champ.map(c => [c, 'main']), ...v.main.map(c => [c, 'main']), ...v.side.map(c => [c, 'side'])].map(([c, s]) => {
-      const cd = findCard(c.n);
-      return `<button class="vcard${s === 'side' ? ' sb' : ''}" data-act="card-info" data-k="${esc(cd ? cd.k : '')}" title="${esc(cardTip(cd))}">${thumb(cd, 112)}<span class="qb num">${c.q}</span>${s === 'side' ? '<span class="sbt">SB</span>' : ''}</button>`;
-    }).join('')}</div>` : '';
+  const pw = DOMAINS.filter(x => power[x]);
   return `<div class="dstats">
     <div><div class="label" style="margin-bottom:6px">Energy curve · main deck</div><div class="curve">${bars}</div></div>
-    <div><div class="label" style="margin-bottom:6px">Card types</div><ul class="issues">${Object.entries(types).sort((a, b) => b[1] - a[1]).map(([t, n]) => `<li><span class="num" style="min-width:24px">${n}</span><span>${esc(t)}</span></li>`).join('')}</ul></div>
-    <div><div class="label" style="margin-bottom:6px">Domains</div><ul class="issues">${DOMAINS.filter(x => doms[x]).map(x => `<li><span class="num" style="min-width:24px">${doms[x]}</span><span class="dom"><i style="background:var(--${x.toLowerCase()})"></i>${x}</span></li>`).join('')}</ul></div>
+    <div><div class="label" style="margin-bottom:8px">Units, spells and gear</div>${typePieHTML(types)}
+      ${v.champ.length ? '<p class="small muted" style="margin:8px 0 0">Main deck only: the Chosen Champion isn’t counted here.</p>' : ''}</div>
+    <div><div class="label" style="margin-bottom:6px">Cards that need power</div>
+      ${pw.length ? `<ul class="issues">${pw.map(x => `<li><span class="num" style="min-width:24px">${power[x]}</span><span class="dom"><i style="background:var(--${x.toLowerCase()})"></i>${x}</span></li>`).join('')}</ul>
+      <p class="small muted" style="margin:6px 0 0">Main deck and Chosen Champion cards with a power cost, by color. A two-color card counts for both.</p>` : '<p class="small muted" style="margin:0">No cards with a power cost.</p>'}</div>
   </div>
-  <div class="spread" style="margin-top:14px"><span class="label">Card images</span><button class="btn sm" data-act="visual-toggle">${S.ui.visual ? 'Hide images' : 'Show deck as images'}</button></div>
-  ${visual}`;
+  <div class="spread" style="margin-top:14px"><span class="label">Card images</span><button class="btn sm" data-act="dv-open">Show the whole deck on one page</button></div>`;
+}
+// Units, spells and gear as a donut: one ring, a surface gap between slices, the total in the middle and a legend with counts.
+function typePieHTML(types) {
+  const parts = [['Unit', 'Units', 1], ['Spell', 'Spells', 2], ['Gear', 'Gear', 3]].map(([k, label, s]) => ({ label, n: types[k], s }));
+  const tot = parts.reduce((a, p) => a + p.n, 0);
+  if (!tot) return '<p class="small muted" style="margin:0">No units, spells or gear yet.</p>';
+  // r = 15.9155 makes the ring 100 units around, so a slice's length is its percentage.
+  const shown = parts.filter(p => p.n), gap = shown.length > 1 ? 0.7 : 0;
+  let at = 0;
+  const segs = shown.map(p => {
+    const len = p.n / tot * 100, dash = Math.max(0.01, len - gap);
+    const seg = `<circle class="pie-seg" r="15.9155" cx="21" cy="21" fill="none" stroke="var(--series-${p.s})" stroke-width="7" stroke-dasharray="${dash.toFixed(2)} ${(100 - dash).toFixed(2)}" stroke-dashoffset="${(-at).toFixed(2)}"><title>${p.label}: ${p.n} (${Math.round(len)}%)</title></circle>`;
+    at += len; return seg;
+  }).join('');
+  return `<div class="pie-wrap">
+    <svg class="pie" viewBox="0 0 42 42" role="img" aria-label="${parts.map(p => `${p.label} ${p.n}`).join(', ')} of ${tot} cards"><g transform="rotate(-90 21 21)">${segs}</g>
+      <text x="21" y="21.5" font-size="8" font-weight="600">${tot}</text><text x="21" y="27" font-size="3.6" style="fill:var(--muted)">cards</text></svg>
+    <ul class="pie-key">${parts.map(p => `<li><i style="background:var(--series-${p.s})"></i><span>${p.label}</span><span class="num">${p.n}</span><span class="num muted">${Math.round(p.n / tot * 100)}%</span></li>`).join('')}</ul>
+  </div>`;
+}
+
+// --- One-page deck picture: every card in the list with its count, like a deck image to share.
+// Legend, runes and battlefields on top; then the Chosen Champion and the main deck (units, spells, gear, each by energy); then the sideboard.
+function deckSheet(d) {
+  const card = (n, q) => ({ n, q, c: findCard(n) });
+  const rank = c => !c ? 3 : c.t === 'Unit' ? 0 : c.t === 'Spell' ? 1 : c.t === 'Gear' ? 2 : 3;
+  const order = (a, b) => rank(a.c) - rank(b.c) || ((a.c || {}).e ?? 99) - ((b.c || {}).e ?? 99) || a.n.localeCompare(b.n);
+  return {
+    top: [...(d.legend ? [card(d.legend, 1)] : []), ...parseList(d.runes).map(x => card(x.n, x.q)), ...parseList(d.bf).map(x => card(x.n, x.q))],
+    main: [...(d.champion ? [card(d.champion, 1)] : []), ...parseList(d.main).map(x => card(x.n, x.q)).sort(order)],
+    side: parseList(d.side).map(x => card(x.n, x.q)).sort(order),
+  };
+}
+// The background runs between the Legend's two domain colors.
+function sheetColors(d) {
+  const L = legendOf(d), ds = (L ? L.d : d.domains || []).filter(x => DOMAINS.includes(x));
+  const css = getComputedStyle(document.documentElement), col = x => css.getPropertyValue('--' + x.toLowerCase()).trim();
+  return ds.length ? [col(ds[ds.length > 1 ? 1 : 0]), col(ds[0])] : ['#3A4252', '#171B24'];
+}
+function deckViewHTML(d) {
+  const s = deckSheet(d), [c1, c2] = sheetColors(d), n = total(parseList(d.main));
+  const tile = x => {
+    const img = x.c ? `<span class="dv-img${x.c.t === 'Battlefield' ? ' bf' : ''}">${thumb(x.c, 0)}</span>` : `<span class="dv-img dv-miss">${esc(x.n)}</span>`;
+    return `<button type="button" class="dv-card"${x.c ? ` data-act="card-info" data-k="${esc(x.c.k)}"` : ''} title="${esc(x.c ? cardTip(x.c) : `${x.n} · not found in the card database`)}">${img}<span class="dv-q num">x${x.q}</span></button>`;
+  };
+  const grid = list => list.length ? `<div class="dv-grid">${list.map(tile).join('')}</div>` : '';
+  const empty = !s.top.length && !s.main.length && !s.side.length;
+  return `<div class="dv-bar">
+      <div style="min-width:0"><div class="label">${n} main deck · ${total(parseList(d.side))} sideboard</div><h2 id="dv-title">${esc(d.name || 'Untitled deck')}</h2></div>
+      <div class="row">${empty ? '' : '<button type="button" class="btn sm primary" data-act="dv-png">Save as image (.png)</button>'}<button type="button" class="btn sm" data-act="dv-close">Close</button></div>
+    </div>
+    <div class="dv-scroll"><div class="dv-sheet" style="background:linear-gradient(135deg, ${c1}, ${c2})">
+      ${grid(s.top)}${grid(s.main)}${s.side.length ? `<h3 class="dv-h">Sideboard</h3>${grid(s.side)}` : ''}
+      ${empty ? '<p class="dv-empty">This deck has no cards yet.</p>' : ''}
+    </div></div>`;
+}
+function openDeckView() {
+  const d = curDeck(); if (!d) return;
+  if (!CDB.ok) { toast('The card database is still loading.'); return; }
+  const el = document.getElementById('deckview');
+  el.innerHTML = deckViewHTML(d); el.hidden = false; document.body.style.overflow = 'hidden';
+  el.querySelector('[data-act="dv-close"]').focus();
+}
+function closeDeckView() {
+  const el = document.getElementById('deckview'); if (el.hidden) return;
+  el.hidden = true; el.innerHTML = ''; document.body.style.overflow = '';
+  document.querySelector('[data-act="dv-open"]')?.focus({ preventScroll: true });
+}
+const fileSafe = s => String(s || '').replace(/[\\\/:*?"<>|]+/g, '').trim();
+const loadImg = src => new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = rej; im.src = src; });
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  if (ctx.roundRect) { ctx.roundRect(x, y, w, h, r); return; }
+  ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+}
+// The same page drawn on a canvas at the card pictures' own size, saved as a PNG.
+async function saveDeckPNG(d, btn) {
+  const s = deckSheet(d), [c1, c2] = sheetColors(d);
+  const W = 200, H = 279, GX = 22, GY = 46, PAD = 44, COLS = 6, HEAD = 100, GAP = 34, SUB = 58;
+  const font = getComputedStyle(document.body).fontFamily;
+  if (btn) { btn.disabled = true; btn.textContent = 'Making the image…'; }
+  try {
+    const sheets = new Map();
+    const need = [...new Set([...s.top, ...s.main, ...s.side].filter(x => x.c && x.c.im).map(x => x.c.im[0]))];
+    await Promise.all(need.map(async k => sheets.set(k, await loadImg(CDB.sheets[k].f))));
+    if (document.fonts) await document.fonts.ready;
+    const blocks = [s.top, s.main, s.side].map((list, i) => ({ list, title: i === 2 ? 'Sideboard' : '' })).filter(b => b.list.length);
+    const gridH = list => Math.ceil(list.length / COLS) * (H + GY) - GY;
+    const width = PAD * 2 + COLS * W + (COLS - 1) * GX;
+    const height = PAD + HEAD + blocks.reduce((a, b, i) => a + (i ? GAP : 0) + (b.title ? SUB : 0) + gridH(b.list), 0) + PAD + 16;
+    const cv = document.createElement('canvas'); cv.width = width; cv.height = height;
+    const ctx = cv.getContext('2d');
+    const bg = ctx.createLinearGradient(0, 0, width, height); bg.addColorStop(0, c1); bg.addColorStop(1, c2);
+    ctx.fillStyle = bg; ctx.fillRect(0, 0, width, height);
+    const text = (t, x, y, f, shadow = true) => {
+      ctx.save(); ctx.font = f; ctx.fillStyle = '#fff';
+      if (shadow) { ctx.shadowColor = 'rgba(0,0,0,.45)'; ctx.shadowBlur = 6; ctx.shadowOffsetY = 1; }
+      ctx.fillText(t, x, y); ctx.restore();
+    };
+    text(d.name || 'Untitled deck', PAD, PAD + 40, `700 40px ${font}`);
+    text([d.legend, d.champion].filter(Boolean).join(' · '), PAD, PAD + 78, `500 22px ${font}`);
+    const drawCard = (x, X, Y) => {
+      ctx.save();
+      ctx.shadowColor = 'rgba(0,0,0,.35)'; ctx.shadowBlur = 14; ctx.shadowOffsetY = 4;
+      roundRect(ctx, X, Y, W, H, 10); ctx.fillStyle = '#1D222D'; ctx.fill();
+      ctx.shadowColor = 'transparent'; ctx.clip();
+      const c = x.c, img = c && c.im && sheets.get(c.im[0]);
+      if (img) {
+        const sh = CDB.sheets[c.im[0]], sw = img.naturalWidth / sh.c, shH = img.naturalHeight / sh.r, i = c.im[1], sx = (i % sh.c) * sw, sy = Math.floor(i / sh.c) * shH;
+        // Landscape battlefields turn upright, like on the page.
+        if (sw > shH) { ctx.translate(X + W / 2, Y + H / 2); ctx.rotate(-Math.PI / 2); ctx.drawImage(img, sx, sy, sw, shH, -H / 2, -W / 2, H, W); }
+        else ctx.drawImage(img, sx, sy, sw, shH, X, Y, W, H);
+      } else {
+        ctx.font = `600 18px ${font}`; ctx.fillStyle = '#fff';
+        let line = '', ly = Y + 32;
+        x.n.split(/\s+/).forEach(w => { const t = line ? line + ' ' + w : w; if (ctx.measureText(t).width > W - 24 && line) { ctx.fillText(line, X + 12, ly); ly += 24; line = w; } else line = t; });
+        ctx.fillText(line, X + 12, ly);
+      }
+      ctx.restore();
+      const t = 'x' + x.q; ctx.font = `700 22px ${font}`;
+      const bw = Math.max(54, ctx.measureText(t).width + 28), bh = 34, bx = X + (W - bw) / 2, by = Y + H - 18;
+      roundRect(ctx, bx, by, bw, bh, 8); ctx.fillStyle = '#171B24'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(255,255,255,.85)'; ctx.stroke();
+      ctx.save(); ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(t, X + W / 2, by + bh / 2 + 1); ctx.restore();
+    };
+    let y = PAD + HEAD;
+    blocks.forEach((b, i) => {
+      if (i) y += GAP;
+      if (b.title) { text(b.title, PAD, y + 34, `700 30px ${font}`); y += SUB; }
+      b.list.forEach((x, j) => drawCard(x, PAD + (j % COLS) * (W + GX), y + Math.floor(j / COLS) * (H + GY)));
+      y += gridH(b.list);
+    });
+    const blob = await new Promise(res => cv.toBlob(res, 'image/png'));
+    if (!blob) throw new Error('png');
+    await offerFile(`${fileSafe(d.name) || 'Deck'}.png`, blob);
+  } catch { toast('Couldn’t make the image here. Take a screenshot of this page instead.'); }
+  finally { if (btn && btn.isConnected) { btn.disabled = false; btn.textContent = 'Save as image (.png)'; } }
 }
 
 // --- Cards
@@ -1938,12 +2266,15 @@ function addCard(c, to) {
     const n = total(parseList(d.bf));
     if (qtyIn(d.bf, c.n) > 1) over = 'same battlefield twice'; else if (n > R.battlefields) over = `${n}/${R.battlefields} battlefields`;
   } else {
-    const L = legendOf(d), tag = L && (L.g || [])[0];
+    const L = legendOf(d), tag = legendTag(L);
     if (to !== 'side' && isChampUnit(c) && !d.champion && (!tag || (c.g || []).includes(tag))) { setChampion(d, c); msg = `${c.n} set as Chosen Champion`; }
     else if (to === 'side') {
       d.side = bumpList(d.side, c.n, 1); msg = `+1 ${c.n} to sideboard`;
       const n = total(parseList(d.side)); if (n > R.sideMax) over = `sideboard ${n}/${R.sideMax}`;
-    } else { d.main = bumpList(d.main, c.n, 1); msg = `+1 ${c.n}`; }
+    } else {
+      d.main = bumpList(d.main, c.n, 1); msg = `+1 ${c.n}`;
+      const n = total(parseList(d.main)); if (n > R.mainSize) over = `main deck ${n}/${R.mainSize}`;
+    }
     const cp = copiesOf(d, c.n); if (cp > R.maxCopies) over = [over, `${cp} copies, limit ${R.maxCopies}`].filter(Boolean).join(', ');
   }
   if (isBanned(c.n)) over = [over, `banned in ${formatName()}`].filter(Boolean).join(', ');
@@ -2076,7 +2407,7 @@ function deckbarHTML() {
   const d = curDeck(); if (!d) return 'No deck selected';
   const R = rules(), v = deckIssues(d);
   const bad = v.iss.some(i => i[0] === 'bad');
-  return `<span class="num">Main ${v.mt}/${R.minMain} · SB ${v.st}/${R.sideMax} · Rune ${v.rt}/${R.runes}</span><span class="row" style="flex-wrap:nowrap">${bad ? '<span class="pill bad">Illegal</span>' : '<span class="pill ok">Legal</span>'}<strong>View deck</strong></span>`;
+  return `<span class="num">Main ${v.mt}/${R.mainSize} · SB ${v.st}/${R.sideMax} · Rune ${v.rt}/${R.runes}</span><span class="row" style="flex-wrap:nowrap">${bad ? '<span class="pill bad">Illegal</span>' : '<span class="pill ok">Legal</span>'}<strong>View deck</strong></span>`;
 }
 function deckPanelHTML() {
   const d = curDeck();
@@ -2097,24 +2428,21 @@ function deckPanelHTML() {
   const used = new Set(), mainList = v.main.slice().sort(sortE);
   const mainHTML = groups.map(([gn, fn]) => {
     const items = mainList.filter(x => !used.has(x.n) && fn(findCard(x.n))); items.forEach(x => used.add(x.n));
-    // The Chosen Champion is one of the main deck's cards: list it first under Champion units.
-    const champRow = gn === 'Champion units' && d.champion
-      ? `<div class="drow chosen${isBanned(d.champion) ? ' over' : ''}" title="Chosen Champion · counts as 1 main deck card">${nameBtn(d.champion, ch)}<span class="chosen-tag">Chosen</span><span class="num qty1">1</span></div>` : '';
-    const n = total(items) + (champRow ? 1 : 0);
-    return n ? `<div class="dsub"><span>${gn}</span><span class="num">${n}</span></div>${champRow}${items.map(x => row('main', x)).join('')}` : '';
+    const n = total(items);
+    return n ? `<div class="dsub"><span>${gn}</span><span class="num">${n}</span></div>${items.map(x => row('main', x)).join('')}` : '';
   }).join('');
   const hint = (t, type) => `<div class="dhint">${t} <button class="btn sm link" data-act="cf-show" data-type="${type}">Show ${type === 'Champion' ? 'champions' : type.toLowerCase() + 's'}</button></div>`;
   return `
   <div class="dp-head">
     <div style="min-width:0"><div class="label">Building</div><div class="dp-name">${esc(d.name || 'Untitled deck')}</div></div>
-    <div class="row" style="flex-wrap:nowrap">${bad ? `<button class="pill bad" data-act="save-deck" title="${bad} problem${bad > 1 ? 's' : ''} · click to see them">Illegal</button>` : '<span class="pill ok">Legal</span>'}<button class="btn sm" data-act="paste-open" title="Paste a deck list">Paste list</button><button class="btn sm primary" data-act="save-deck">Save deck</button><button class="btn sm dp-close" data-act="drawer" aria-label="Close deck list">Close</button></div>
+    <div class="row" style="flex-wrap:nowrap">${bad ? `<button class="pill bad" data-act="save-deck" title="${bad} problem${bad > 1 ? 's' : ''} · click to see them">Illegal</button>` : '<span class="pill ok">Legal</span>'}<button class="btn sm" data-act="paste-open" title="Paste a deck list">Paste list</button><button class="btn sm" data-act="dv-open" title="Every card in the deck on one page">One page</button><button class="btn sm primary" data-act="save-deck">Save deck</button><button class="btn sm dp-close" data-act="drawer" aria-label="Close deck list">Close</button></div>
   </div>
   ${reportHTML(d)}
   <div class="dsec">${head('Legend', null)}
     ${d.legend ? `<div class="drow${isBanned(d.legend) ? ' over' : ''}">${nameBtn(d.legend, L)}<span class="row" style="gap:4px">${(L ? L.d : []).map(x => `<i class="ddom" style="background:var(--${x.toLowerCase()})" title="${x}"></i>`).join('')}</span><button class="arrow" data-act="row" data-op="unlegend" aria-label="Remove Legend" title="Remove">×</button></div>` : hint('Click a Legend card to set it.', 'Legend')}</div>
   <div class="dsec">${head('Chosen Champion', null)}
     ${d.champion ? `<div class="drow${isBanned(d.champion) ? ' over' : ''}">${nameBtn(d.champion, ch)}<span></span><button class="arrow" data-act="row" data-op="unchamp" aria-label="Remove Chosen Champion" title="Remove">×</button></div>` : hint('Click a champion unit to choose it.', 'Champion')}</div>
-  <div class="dsec">${head('Main deck', `${v.mt}/${R.minMain}`, v.mt >= R.minMain)}
+  <div class="dsec">${head('Main deck', `${v.mt}/${R.mainSize}`, v.mt === R.mainSize, v.mt > R.mainSize)}
     ${mainHTML || '<div class="dhint">Click cards on the left to add them.</div>'}</div>
   <div class="dsec">${head('Sideboard', `${v.st}/${R.sideMax}`, v.st > 0, v.st > R.sideMax)}
     ${v.side.length ? v.side.slice().sort(sortE).map(x => row('side', x)).join('') : '<div class="dhint">Switch “Add to” to Sideboard, or use → on a main deck card.</div>'}</div>
@@ -2218,7 +2546,7 @@ function viewData() {
     <p class="muted small" style="margin:0 0 12px;max-width:65ch">Used for the deck checks. Adjust them if the tournament rules for your event differ.</p>
     <div class="grid">
       <div class="field"><label class="label" for="r-format">Format</label><select id="r-format" data-bind="rules" data-k="format"><option value="standard"${R.format !== '2v2' ? ' selected' : ''}>Standard (1v1)</option><option value="2v2"${R.format === '2v2' ? ' selected' : ''}>2v2</option></select></div>
-      ${[['minMain', 'Main deck minimum'], ['maxCopies', 'Max copies per card'], ['runes', 'Runes'], ['battlefields', 'Battlefields'], ['sideMax', 'Sideboard maximum'], ['winPoints', 'Points to win a game']].map(([k, n]) => `<div class="field"><label class="label" for="r-${k}">${n}</label><input id="r-${k}" type="number" min="0" value="${R[k]}" data-bind="rules" data-k="${k}"></div>`).join('')}
+      ${[['mainSize', 'Main deck (without Chosen Champion)'], ['maxCopies', 'Max copies per card'], ['runes', 'Runes'], ['battlefields', 'Battlefields'], ['sideMax', 'Sideboard maximum'], ['winPoints', 'Points to win a game']].map(([k, n]) => `<div class="field"><label class="label" for="r-${k}">${n}</label><input id="r-${k}" type="number" min="0" value="${R[k]}" data-bind="rules" data-k="${k}"></div>`).join('')}
     </div>
   </section>
   <section class="panel">
@@ -2315,11 +2643,170 @@ async function offerFile(filename, data, fallbackMsg) {
     catch (e) { if (e && e.code === 'declined') return; if (e && e.code === 'rate_limited') { toast('A save prompt is already open.'); return; } }
   }
   if (!window.claude) {
-    const url = URL.createObjectURL(new Blob([data], { type: /\.csv$/.test(filename) ? 'text/csv' : 'application/json' }));
+    const url = URL.createObjectURL(data instanceof Blob ? data : new Blob([data], { type: /\.csv$/.test(filename) ? 'text/csv' : 'application/json' }));
     const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 4000); toast('Saved ' + filename); return;
   }
+  // A spreadsheet can't go on the clipboard like text can.
+  if (typeof data !== 'string') { toast('Saving files isn’t available here.'); return; }
   copyText(data, fallbackMsg);
+}
+
+// ---------- spreadsheet (.xlsx) export ----------
+// A small .xlsx writer: one worksheet with shared strings, cell styles, merged cells, formulas (with their values filled
+// in, for viewers that don't recalculate) and conditional fills, zipped without compression. No library needed offline.
+const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+const xmlEsc = s => String(s).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '').replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const colName = i => { let s = ''; for (i++; i; i = Math.floor((i - 1) / 26)) s = String.fromCharCode(65 + (i - 1) % 26) + s; return s; };
+// Cell styles, registered on first use: st({ b, i, sz, color, fill, l, r, t, bt, h, v, wrap }) → style index.
+function xlStyles() {
+  const fonts = ['<font><sz val="11"/><name val="Aptos Narrow"/><family val="2"/></font>'], fills = ['<fill><patternFill patternType="none"/></fill>', '<fill><patternFill patternType="gray125"/></fill>'];
+  const borders = ['<border><left/><right/><top/><bottom/><diagonal/></border>'], xfs = ['<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'];
+  const idx = (arr, x) => { let i = arr.indexOf(x); if (i < 0) { i = arr.length; arr.push(x); } return i; };
+  const side = (k, v) => v ? `<${k} style="${v}"><color rgb="FF000000"/></${k}>` : `<${k}/>`;
+  const st = (o = {}) => {
+    const font = idx(fonts, `<font>${o.b ? '<b/>' : ''}${o.i ? '<i/>' : ''}<sz val="${o.sz || 11}"/>${o.color ? `<color rgb="FF${o.color}"/>` : ''}<name val="Aptos Narrow"/><family val="2"/></font>`);
+    const fill = o.fill ? idx(fills, `<fill><patternFill patternType="solid"><fgColor rgb="FF${o.fill}"/><bgColor indexed="64"/></patternFill></fill>`) : 0;
+    const border = idx(borders, `<border>${side('left', o.l)}${side('right', o.r)}${side('top', o.t)}${side('bottom', o.bt)}<diagonal/></border>`);
+    const al = o.h || o.v || o.wrap ? `<alignment${o.h ? ` horizontal="${o.h}"` : ''}${o.v ? ` vertical="${o.v}"` : ''}${o.wrap ? ' wrapText="1"' : ''}/>` : '';
+    return idx(xfs, `<xf numFmtId="0" fontId="${font}" fillId="${fill}" borderId="${border}" xfId="0" applyFont="1" applyFill="1" applyBorder="1"${al ? ` applyAlignment="1">${al}</xf>` : '/>'}`);
+  };
+  // Conditional fills: 0 = green (count is right), 1 = red.
+  st.xml = () => `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="${fonts.length}">${fonts.join('')}</fonts><fills count="${fills.length}">${fills.join('')}</fills><borders count="${borders.length}">${borders.join('')}</borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="${xfs.length}">${xfs.join('')}</cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles><dxfs count="2">${['8ED873', 'FF0000'].map(c => `<dxf><fill><patternFill patternType="solid"><fgColor rgb="FF${c}"/><bgColor rgb="FF${c}"/></patternFill></fill></dxf>`).join('')}</dxfs></styleSheet>`;
+  return st;
+}
+const CRC_TABLE = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+const crc32 = b => { let c = 0xFFFFFFFF; for (let i = 0; i < b.length; i++) c = CRC_TABLE[(c ^ b[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; };
+// A zip archive with every file stored as is (no compression): [[name, text], …] → Blob.
+function zipBlob(files, type) {
+  const enc = new TextEncoder(), parts = [], dir = [], now = new Date();
+  const time = (now.getHours() << 11) | (now.getMinutes() << 5) | (now.getSeconds() >> 1), date = ((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate();
+  let off = 0;
+  files.forEach(([name, text]) => {
+    const n = enc.encode(name), data = enc.encode(text), crc = crc32(data);
+    const h = new DataView(new ArrayBuffer(30));
+    [[0, 0x04034b50, 4], [4, 20], [6, 0x0800], [10, time], [12, date], [14, crc, 4], [18, data.length, 4], [22, data.length, 4], [26, n.length]].forEach(([o, v, w]) => w === 4 ? h.setUint32(o, v, true) : h.setUint16(o, v, true));
+    const c = new DataView(new ArrayBuffer(46));
+    [[0, 0x02014b50, 4], [4, 20], [6, 20], [8, 0x0800], [12, time], [14, date], [16, crc, 4], [20, data.length, 4], [24, data.length, 4], [28, n.length], [42, off, 4]].forEach(([o, v, w]) => w === 4 ? c.setUint32(o, v, true) : c.setUint16(o, v, true));
+    parts.push(new Uint8Array(h.buffer), n, data); dir.push(new Uint8Array(c.buffer), n);
+    off += 30 + n.length + data.length;
+  });
+  const size = dir.reduce((a, x) => a + x.length, 0), e = new DataView(new ArrayBuffer(22));
+  [[0, 0x06054b50, 4], [8, files.length], [10, files.length], [12, size, 4], [16, off, 4]].forEach(([o, v, w]) => w === 4 ? e.setUint32(o, v, true) : e.setUint16(o, v, true));
+  return new Blob([...parts, ...dir, new Uint8Array(e.buffer)], { type });
+}
+// sh: { name, rows: [[{ v, s, f }]], cols: [width], heights: { row: points }, merges: ['C5:D5'], freeze: 'B2', cf: [{ sqref, formula }] }
+function xlsxBlob(sh, st) {
+  const strings = [], sIdx = new Map(), si = t => { if (!sIdx.has(t)) { sIdx.set(t, strings.length); strings.push(t); } return sIdx.get(t); };
+  const width = Math.max(1, ...Array.from(sh.rows, r => r ? r.length : 0));
+  const data = sh.rows.map((r, ri) => {
+    if (!r) return '';
+    const cells = r.map((c, ci) => {
+      if (!c) return '';
+      const ref = colName(ci) + (ri + 1), s = c.s ? ` s="${c.s}"` : '';
+      if (c.f) return `<c r="${ref}"${s}><f>${xmlEsc(c.f)}</f><v>${+c.v || 0}</v></c>`;
+      if (c.v === '' || c.v == null) return `<c r="${ref}"${s}/>`;
+      return typeof c.v === 'number' ? `<c r="${ref}"${s}><v>${c.v}</v></c>` : `<c r="${ref}"${s} t="s"><v>${si(String(c.v))}</v></c>`;
+    }).join('');
+    const ht = sh.heights[ri];
+    return `<row r="${ri + 1}"${ht ? ` ht="${ht}" customHeight="1"` : ''}>${cells}</row>`;
+  }).join('');
+  const [fc, fr] = [sh.freeze.match(/[A-Z]+/)[0], +sh.freeze.match(/\d+/)[0]];
+  const xSplit = fc.split('').reduce((a, ch) => a * 26 + ch.charCodeAt(0) - 64, 0) - 1, ySplit = fr - 1;
+  const sheet = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><dimension ref="A1:${colName(width - 1)}${sh.rows.length}"/><sheetViews><sheetView workbookViewId="0"><pane xSplit="${xSplit}" ySplit="${ySplit}" topLeftCell="${sh.freeze}" activePane="bottomRight" state="frozen"/><selection pane="bottomRight" activeCell="${sh.freeze}" sqref="${sh.freeze}"/></sheetView></sheetViews><sheetFormatPr defaultRowHeight="15"/><cols>${sh.cols.map((w, i) => `<col min="${i + 1}" max="${i + 1}" width="${w}" customWidth="1"/>`).join('')}</cols><sheetData>${data}</sheetData>${sh.merges.length ? `<mergeCells count="${sh.merges.length}">${sh.merges.map(m => `<mergeCell ref="${m}"/>`).join('')}</mergeCells>` : ''}${sh.cf.map((x, i) => `<conditionalFormatting sqref="${x.sqref}"><cfRule type="cellIs" dxfId="0" priority="${i * 2 + 1}" operator="equal"><formula>${x.formula}</formula></cfRule><cfRule type="cellIs" dxfId="1" priority="${i * 2 + 2}" operator="notEqual"><formula>${x.formula}</formula></cfRule></conditionalFormatting>`).join('')}<pageMargins left="0.7" right="0.7" top="0.75" bottom="0.75" header="0.3" footer="0.3"/></worksheet>`;
+  const ns = 'http://schemas.openxmlformats.org', head = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n';
+  return zipBlob([
+    ['[Content_Types].xml', `${head}<Types xmlns="${ns}/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/><Override PartName="/xl/sharedStrings.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml"/></Types>`],
+    ['_rels/.rels', `${head}<Relationships xmlns="${ns}/package/2006/relationships"><Relationship Id="rId1" Type="${ns}/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`],
+    ['xl/workbook.xml', `${head}<workbook xmlns="${ns}/spreadsheetml/2006/main" xmlns:r="${ns}/officeDocument/2006/relationships"><bookViews><workbookView/></bookViews><sheets><sheet name="${xmlEsc(sh.name)}" sheetId="1" r:id="rId1"/></sheets><calcPr calcId="191029" fullCalcOnLoad="1"/></workbook>`],
+    ['xl/_rels/workbook.xml.rels', `${head}<Relationships xmlns="${ns}/package/2006/relationships"><Relationship Id="rId1" Type="${ns}/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="${ns}/officeDocument/2006/relationships/styles" Target="styles.xml"/><Relationship Id="rId3" Type="${ns}/officeDocument/2006/relationships/sharedStrings" Target="sharedStrings.xml"/></Relationships>`],
+    ['xl/worksheets/sheet1.xml', sheet],
+    ['xl/styles.xml', st.xml()],
+    ['xl/sharedStrings.xml', `${head}<sst xmlns="${ns}/spreadsheetml/2006/main" count="${strings.length}" uniqueCount="${strings.length}">${strings.map(t => `<si><t xml:space="preserve">${xmlEsc(t)}</t></si>`).join('')}</sst>`],
+  ], XLSX_MIME);
+}
+// The whole sideboard plan as one sheet, laid out like a hand-made sideboard spreadsheet: cards down the side, two columns
+// per matchup (1st going first, 2nd going second). Main deck rows count copies taken out, sideboard rows copies brought in,
+// battlefield rows the game to play each one; then notes, and the deck list at the bottom.
+function exportSideboard(d) {
+  const guides = d.guides || [], main = parseList(d.main), side = parseList(d.side);
+  if (!guides.length) { toast('Add a matchup first.'); return; }
+  if (!main.length) { toast('This deck has no main deck list yet.'); return; }
+  const st = xlStyles(), M = 'medium', T = 'thin';
+  // Columns: A card names, B counts, then P and D for each matchup, then U ("How many # used") after the last one.
+  const U = 2 + guides.length * 2, P = k => 2 + k * 2;
+  const rows = [], merges = [], heights = {};
+  const put = (r, c, v, s, f) => { (rows[r] = rows[r] || [])[c] = { v, s, f }; };
+  const num = (r, c) => +((rows[r] || [])[c] || {}).v || 0;
+  // Thick frame around the names, around each matchup's pair of columns and around U; thin lines between rows.
+  const sty = (c, o = {}) => st({ t: T, bt: T, v: 'center', h: c === 0 ? 'left' : 'center',
+    l: c === 0 || c === U || (c >= 2 && c % 2 === 0) ? M : c >= 2 ? T : '', r: c === 0 || c === U || (c >= 2 && c % 2 === 1) ? M : '', ...o });
+  const line = (r, vals, o) => { for (let c = 0; c < U; c++) put(r, c, vals[c] ?? '', sty(c, o)); };
+  const qty = (list, n) => ((list || []).find(x => cardKey(x.n) === cardKey(n)) || {}).q || 0;
+  const sw = guides.map(g => [guideSwaps(g, 'me'), guideSwaps(g, 'opp')]);
+  // Column titles use the champion's name ("Kennen P"), with the Legend's full name when two Legends share a champion,
+  // and the Chosen Champion's title in brackets for a champion-specific matchup.
+  const opp = guides.map(guideOpp), tagOf = o => legendTag(resolveLegend(o.legend)) || o.legend;
+  const tagLegends = new Map(); opp.forEach(o => tagLegends.set(tagOf(o), new Set([...(tagLegends.get(tagOf(o)) || []), legendKey(o.legend)])));
+  const titles = opp.map(o => { const base = tagLegends.get(tagOf(o)).size > 1 ? o.legend : tagOf(o); return o.champ ? `${base} (${(o.champ.match(/^.+?(?: - |, )(.+)$/) || [])[1] || o.champ})` : base; });
+  const bfs = [...new Set(parseList(d.bf).map(x => bfName(x.n)))];
+  const NOTES = [['Game plan', 'plan'], ['Watch out for', 'watch'], ['Going first / second', '']].filter(([, k]) => guides.some(g => k ? g[k] : g.play || g.draw));
+  const lines = t => String(t || '').split('\n').length, est = (t, per) => String(t || '').split('\n').reduce((a, l) => a + Math.max(1, Math.ceil(l.length / per)), 0);
+
+  let r = 0;
+  const top = { t: M, b: true, wrap: true };
+  line(r, { 0: 'Legends', 1: '#' }, top);
+  titles.forEach((t, k) => { put(r, P(k), `${t} 1st`, sty(P(k), top)); put(r, P(k) + 1, `${t} 2nd`, sty(P(k) + 1, top)); });
+  heights[r] = 15 * Math.max(1, ...titles.map(t => Math.ceil((t.length + 4) / 10)));
+  line(++r, { 0: 'Main Deck:' });
+  const m0 = ++r;
+  main.forEach(c => { const v = { 0: c.n, 1: c.q }; sw.forEach(([p, s], k) => { v[P(k)] = qty(p.outs, c.n) || ''; v[P(k) + 1] = qty(s.outs, c.n) || ''; }); line(r++, v); });
+  const m1 = r - 1;
+  if (bfs.length) {
+    line(r++, { 0: 'Battlefields (game in Bo3)' }, { fill: '262626', color: 'FFFFFF', b: true });
+    bfs.forEach(n => {
+      const v = { 0: n, 1: 1 };
+      guides.forEach((g, k) => { const i = bfOrder(g).indexOf(n); v[P(k)] = i >= 0 ? i + 1 : ''; merges.push(`${colName(P(k))}${r + 1}:${colName(P(k) + 1)}${r + 1}`); });
+      line(r++, v);
+    });
+  }
+  // Sideboard rows come before the count row is filled in, since its totals add up what they bring in.
+  const cr = r, s0 = r + 1, s1 = r + side.length, lastSide = !NOTES.length;
+  side.forEach((c, i) => {
+    const rr = s0 + i, end = lastSide && i === side.length - 1 ? { bt: M } : {}, v = { 0: c.n, 1: c.q };
+    sw.forEach(([p, s], k) => { v[P(k)] = qty(p.ins, c.n) || ''; v[P(k) + 1] = qty(s.ins, c.n) || ''; });
+    line(rr, v, end);
+    put(rr, U, Object.keys(v).filter(k => +k >= 2 && v[k] >= 1).length, sty(U, end), `COUNTIF(${colName(2)}${rr + 1}:${colName(U - 1)}${rr + 1},">=1")`);
+  });
+  const cnt = { t: M, b: true, ...(lastSide && !side.length ? { bt: M } : {}) }, mainTot = total(main), rng = (c, a, b) => `${colName(c)}${a + 1}:${colName(c)}${b + 1}`;
+  line(cr, { 0: 'Cards in deck' }, cnt);
+  put(cr, 1, mainTot, sty(1, cnt), `SUM(${rng(1, m0, m1)})`);
+  for (let c = 2; c < U; c++) {
+    let v = mainTot; for (let x = m0; x <= m1; x++) v -= num(x, c); for (let x = s0; x <= s1; x++) v += num(x, c);
+    put(cr, c, v, sty(c, cnt), `SUM($B$${m0 + 1}:$B$${m1 + 1})-SUM(${rng(c, m0, m1)})${side.length ? `+SUM(${rng(c, s0, s1)})` : ''}`);
+  }
+  if (side.length) put(cr, U, 'How many # used', sty(U, { t: M, b: true, wrap: true }));
+  r = s1 + 1;
+  NOTES.forEach(([label, k], j) => {
+    const o = { i: true, sz: 10, wrap: true, v: 'top', h: 'left', ...(j === NOTES.length - 1 ? { bt: M } : {}) };
+    line(r, { 0: label }, o);
+    let h = 1;
+    guides.forEach((g, gi) => {
+      if (k) { put(r, P(gi), g[k] || '', sty(P(gi), o)); merges.push(`${colName(P(gi))}${r + 1}:${colName(P(gi) + 1)}${r + 1}`); h = Math.max(h, est(g[k], 20)); }
+      else { put(r, P(gi), g.play || '', sty(P(gi), o)); put(r, P(gi) + 1, g.draw || '', sty(P(gi) + 1, o)); h = Math.max(h, est(g.play, 10), est(g.draw, 10)); }
+    });
+    heights[r++] = Math.min(409, 13 * Math.max(h, lines(label)) + 4);
+  });
+  put(++r, 0, '1st = going first, 2nd = going second. Main deck rows: copies to take out. Sideboard rows: copies to bring in. Battlefield rows: the game to play it in.', st({ i: true, sz: 10 }));
+  r += 2;
+  deckText(d).split('\n').forEach(t => put(r++, 0, t, 0));
+  const wA = Math.min(42, Math.max(24, ...[...main, ...side].map(c => c.n.length + 2), ...bfs.map(n => n.length + 2)));
+  const name = String(d.name || 'Deck').replace(/[[\]:*?\/\\]/g, '').replace(/^'+|'+$/g, '').slice(0, 31).trim() || 'Sideboard';
+  const blob = xlsxBlob({ name, rows, merges, heights, freeze: 'B2', cols: [wA, 5, ...Array(guides.length * 2).fill(11), 16],
+    cf: [{ sqref: `${colName(2)}${cr + 1}:${colName(U - 1)}${cr + 1}`, formula: `$B$${cr + 1}` }] }, st);
+  offerFile(`${fileSafe(d.name) || 'Deck'} sideboard.xlsx`, blob);
 }
 function deleteAsset(id) {
   if (!assets || !id) return;
@@ -2490,19 +2977,48 @@ document.addEventListener('click', e => {
       const i = +b.dataset.i, g = S.form.games[i], deck = S.decks[S.form.deckId];
       S.ui.sbOpen = S.ui.sbOpen === i ? null : i;
       // First time open with nothing recorded: start from the guide for this opponent.
-      const guide = deck && S.form.oppLegend.trim() && getGuide(deck, legendKey(S.form.oppLegend));
-      if (S.ui.sbOpen === i && i > 0 && !g.ins.length && !g.outs.length && guide && ((guide.ins || []).length || (guide.outs || []).length)) {
-        g.ins = (guide.ins || []).map(x => ({ ...x })); g.outs = (guide.outs || []).map(x => ({ ...x })); toast(`Filled from your guide vs ${legendName(guide.arch)}`);
+      const guide = findGuide(deck, S.form.oppLegend, S.form.oppChamp), sw = guide && guideSwaps(guide, g.first);
+      if (S.ui.sbOpen === i && i > 0 && !g.ins.length && !g.outs.length && hasSwaps(sw)) {
+        g.ins = sw.ins.map(x => ({ ...x })); g.outs = sw.outs.map(x => ({ ...x })); toast(`Filled from your guide vs ${guideName(guide)}`);
       }
       render(); break; }
     case 'swap': {
       const n = b.dataset.card, dir = b.dataset.dir;
       if (b.dataset.ctx === 'game') { const g = S.form.games[+b.dataset.i]; [g.ins, g.outs] = swapMove(g.ins, g.outs, n, dir); render(); }
-      else if (d) { const key = S.ui.guideKey, g = getGuide(d, key, archNames().get(key) || key, true); [g.ins, g.outs] = swapMove(g.ins || [], g.outs || [], n, dir); persist('decks', d.id, 400); render(); }
+      else if (d) {
+        const g = curGuide(); if (!g) break;
+        if (byTurn(g) && S.ui.sbSide === 'second') {
+          // Going second starts as a copy of going first; once it matches going first again it goes back to sharing it.
+          const s = g.second || { ins: clone(g.ins || []), outs: clone(g.outs || []) };
+          [s.ins, s.outs] = swapMove(s.ins, s.outs, n, dir); g.second = s; g.byTurn = true;
+          if (JSON.stringify(sortSwaps(s)) === JSON.stringify(sortSwaps(g))) delete g.second;
+        } else [g.ins, g.outs] = swapMove(g.ins || [], g.outs || [], n, dir);
+        persist('decks', d.id, 400); render();
+      }
       break; }
+    case 'sb-side': S.ui.sbSide = b.dataset.v; render(); break;
+    // Turning it off keeps any going-second swaps, unused, so turning it back on brings them back.
+    case 'sb-turns': { const g = curGuide(); if (!g || !d) break; g.byTurn = b.checked; if (b.checked) S.ui.sbSide = 'first'; persist('decks', d.id); render(); break; }
+    case 'sb-same': { const g = curGuide(); if (!g || !d) break; delete g.second; persist('decks', d.id); render(); break; }
+    case 'sb-add': if (d) openPicker('sbLegend', 0, { add: true }); break;
+    case 'sb-import': if (d) openImport(); break;
+    case 'imp-split': S.ui.imp.split = b.checked; document.getElementById('modal-body').innerHTML = importHTML(); break;
+    case 'imp-go': {
+      if (!d) break;
+      const picked = [...document.querySelectorAll('#imp-list input:checked:not(:disabled)')].map(x => ({ legend: x.dataset.legend, champ: x.dataset.champ }));
+      if (!picked.length) { toast('Tick at least one matchup.'); break; }
+      picked.forEach(x => addGuide(d, x.legend, x.champ));
+      S.ui.guideKey = guideKey(picked[0].legend, picked[0].champ); persist('decks', d.id); closeCard();
+      toast(`Added ${picked.length} matchup${picked.length > 1 ? 's' : ''}`); render(); break; }
+    case 'sb-del-all': { if (!d) break; const n = (d.guides || []).length; d.guides = []; S.ui.guideKey = null; S.ui.confirm = null;
+      persist('decks', d.id); toast(`Removed ${n} matchup${n === 1 ? '' : 's'}`); render(); break; }
+    case 'sb-del': { const g = b.dataset.key ? getGuide(d, b.dataset.key) : curGuide(); if (!g || !d) break; d.guides = d.guides.filter(x => x !== g);
+      if (keyOfGuide(g) === S.ui.guideKey) S.ui.guideKey = null; S.ui.confirm = null;
+      persist('decks', d.id); toast(`Removed ${guideName(g)}`); render(); break; }
+    case 'sb-xlsx': if (d) exportSideboard(d); break;
     case 'sb-view': { const k = b.dataset.id + ':' + b.dataset.i; S.ui.sbView = S.ui.sbView === k ? null : k; render(); break; }
-    case 'fsb-guide': { const g = S.form.games[+b.dataset.i], deck = S.decks[S.form.deckId], guide = deck && getGuide(deck, legendKey(S.form.oppLegend)); if (!guide) break;
-      g.ins = (guide.ins || []).map(x => ({ ...x })); g.outs = (guide.outs || []).map(x => ({ ...x })); render(); break; }
+    case 'fsb-guide': { const g = S.form.games[+b.dataset.i], deck = S.decks[S.form.deckId], guide = findGuide(deck, S.form.oppLegend, S.form.oppChamp); if (!guide) break;
+      const sw = guideSwaps(guide, g.first); g.ins = sw.ins.map(x => ({ ...x })); g.outs = sw.outs.map(x => ({ ...x })); render(); break; }
     case 'fsb-copy': { const i = +b.dataset.i, g = S.form.games[i], prev = S.form.games[i - 1]; g.ins = prev.ins.map(x => ({ ...x })); g.outs = prev.outs.map(x => ({ ...x })); render(); break; }
     case 'fsb-clear': { const g = S.form.games[+b.dataset.i]; g.ins = []; g.outs = []; render(); break; }
     case 'rp-add': {
@@ -2532,11 +3048,16 @@ document.addEventListener('click', e => {
     case 'stats-scope': S.ui.statsScope = b.dataset.v; saveUI(); render(); break;
     case 'champ-toggle': S.ui.showChamp = !S.ui.showChamp; saveUI(); render(); break;
     case 'bf-show': S.ui.bfOpp = b.dataset.key; saveUI(); render(); document.getElementById('bf-panel')?.scrollIntoView({ block: 'start' }); break;
-    case 'open-guide': { S.ui.guideKey = b.dataset.key; setTab('sideboard'); break; }
-    case 'pick-guide': S.ui.guideKey = b.dataset.key; S.ui.copy = null; render(); break;
-    case 'g-prune': { if (!d) break; const g = getGuide(d, S.ui.guideKey); if (!g) break;
+    // From the Matchups tab: open the guide for that opponent, adding it to the Sideboard list if it isn't there yet.
+    case 'open-guide': { if (!d) break; const key = guideKey(b.dataset.legend, b.dataset.champ);
+      if (!getGuide(d, key)) { addGuide(d, b.dataset.legend, b.dataset.champ); persist('decks', d.id); }
+      S.ui.guideKey = key; setTab('sideboard'); break; }
+    case 'pick-guide': S.ui.guideKey = b.dataset.key; S.ui.copy = null; S.ui.confirm = null; render(); break;
+    case 'g-prune': { if (!d) break; const g = curGuide(); if (!g) break;
       const side = parseList(d.side), main = parseList(d.main);
-      g.ins = (g.ins || []).filter(x => side.some(c => norm(c.n) === norm(x.n))); g.outs = (g.outs || []).filter(x => main.some(c => norm(c.n) === norm(x.n)));
+      [g, g.second].filter(Boolean).forEach(s => {
+        s.ins = (s.ins || []).filter(x => side.some(c => norm(c.n) === norm(x.n))); s.outs = (s.outs || []).filter(x => main.some(c => norm(c.n) === norm(x.n)));
+      });
       persist('decks', d.id); render(); break; }
     case 'copy-sheet': if (d) { const t = cheatSheet(d); if (t) copyText(t, 'Cheat sheet copied'); else toast('Write a guide first.'); } break;
     case 'new-deck': newDeck(); break;
@@ -2551,7 +3072,7 @@ document.addEventListener('click', e => {
       if (!p.legend && !p.champion && !p.main && !p.side && !p.runes && !p.bf) { toast('No cards found. Use lines like "3 Card Name" or the one-line "Legend: 1 … MainDeck: 3 …" format.'); break; }
       Object.assign(d, { main: p.main, side: p.side, runes: p.runes, bf: p.bf }); if (p.legend) d.legend = p.legend; if (p.champion) d.champion = p.champion;
       const L = legendOf(d); if (L) d.domains = L.d.slice();
-      if (L && (!d.name || /^new deck/i.test(d.name))) d.name = `${(L.g || [])[0] || L.n} deck`;
+      if (L && (!d.name || /^new deck/i.test(d.name))) d.name = `${legendTag(L) || L.n} deck`;
       const all = [p.legend, p.champion, ...[p.main, p.side, p.runes, p.bf].flatMap(x => parseList(x).map(c => c.n))].filter(Boolean);
       const unknown = CDB.ok ? all.filter(n => !findCard(n)) : [];
       const v = deckIssues(d);
@@ -2596,7 +3117,9 @@ document.addEventListener('click', e => {
     case 'report-close': S.ui.report = null; if (S.ui.tab === 'cards') refreshBuild(); else render(); break;
     case 'cloud-sync': cloudPull(false); toast('Syncing…'); break;
     case 'cloud-out': cloudSignOut(); break;
-    case 'visual-toggle': S.ui.visual = !S.ui.visual; renderDeckCheck(); break;
+    case 'dv-open': openDeckView(); break;
+    case 'dv-close': closeDeckView(); break;
+    case 'dv-png': { const d2 = curDeck(); if (d2) saveDeckPNG(d2, b); break; }
     case 'clear-examples': {
       Object.values(S.decks).filter(x => x.example).forEach(x => removeDoc('decks', x.id));
       Object.values(S.matches).filter(x => x.example).forEach(x => removeDoc('matches', x.id));
@@ -2624,6 +3147,7 @@ document.addEventListener('contextmenu', e => {
 });
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && !document.getElementById('modal').hidden) { closeCard(); return; }
+  if (e.key === 'Escape' && !document.getElementById('deckview').hidden) { closeDeckView(); return; }
   if (e.key === 'Enter' && e.target.id === 'pk-q') { e.preventDefault(); const b = document.querySelector('#pk-list .pk'); if (b) b.click(); return; }
   if (e.key === 'Escape') { const o = document.querySelector('details.ms[open]'); if (o) { o.open = false; o.querySelector('summary').focus(); return; } }
   const t = e.target;
@@ -2647,7 +3171,7 @@ document.addEventListener('input', e => {
     if (['main', 'side', 'runes', 'bf'].includes(k)) renderDeckCheck();
     if (k === 'name') { renderChrome(); }
   } else if (bind === 'guide' && d) {
-    const g = getGuide(d, S.ui.guideKey, archNames().get(S.ui.guideKey), true); g[k] = el.value; persist('decks', d.id, 700);
+    const g = curGuide(); if (g) { g[k] = el.value; persist('decks', d.id, 700); }
   } else if (bind === 'field') {
     const f = S.settings.field[+el.dataset.i]; if (!f) return;
     f[k] = k === 'share' ? (el.value === '' ? '' : Math.max(0, +el.value)) : el.value; persist('settings', 'main', 600);
@@ -2664,6 +3188,13 @@ document.addEventListener('change', e => {
   // A different deck means a different Legend and Champion on my side, also when editing an old match.
   if (el.id === 'f-deck') { S.form.deckId = el.value; S.form.myLegend = null; S.form.myChamp = null; S.ui.sbOpen = null; render(); return; }
   if (el.id === 'bf-opp') { S.ui.bfOpp = el.value; saveUI(); render(); return; }
+  // Battlefield order: a battlefield already planned for another game trades places with this game's.
+  if (el.dataset && el.dataset.bind === 'gbf') {
+    const d = curDeck(), g = curGuide(); if (!g) return;
+    const i = +el.dataset.i, bf = bfOrder(g), j = bf.indexOf(el.value);
+    if (el.value && j >= 0 && j !== i) bf[j] = bf[i];
+    bf[i] = el.value; g.bf = bf; persist('decks', d.id); render(); return;
+  }
   if (el.dataset && el.dataset.bind === 'field' && el.dataset.k === 'arch') { const f = S.settings.field[+el.dataset.i]; if (f) { f.arch = legendName(el.value); persist('settings', 'main'); } render(); return; }
   if (el.id === 'd-legend' || el.id === 'd-champion') {
     const d = curDeck(), L = legendOf(d);
@@ -2700,10 +3231,7 @@ document.addEventListener('submit', e => {
     inp.value = ''; toast(msg); render();
     setTimeout(() => document.getElementById('qa-name')?.focus(), 0);
   }
-  else if (f.id === 'add-arch') {
-    const v = document.getElementById('new-arch').value.trim(), d = curDeck(); if (!v || !d) return;
-    const key = legendKey(v); getGuide(d, key, legendName(v), true); S.ui.guideKey = key; persist('decks', d.id); render();
-  } else if (f.id === 'field-add') {
+  else if (f.id === 'field-add') {
     const a = document.getElementById('fn-arch').value.trim(), s = document.getElementById('fn-share').value; if (!a) return;
     (S.settings.field = S.settings.field || []).push({ arch: legendName(a), share: s === '' ? 0 : Math.max(0, +s) }); persist('settings', 'main'); render();
     setTimeout(() => document.getElementById('fn-arch')?.focus(), 0);

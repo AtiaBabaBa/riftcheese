@@ -6,11 +6,11 @@ A tournament-prep tool for the Riftbound TCG: build decks from the full card dat
 
 ## What it does
 
-- **Cards / deckbuilder** – click cards to add them; Legend, Chosen Champion, main deck, sideboard (10), runes (12) and battlefields (3). Over-limit and banned cards are allowed while building and flagged as *Illegal* when you save. Ban list included (Standard and 2v2, as of 18 Sep 2026).
+- **Cards / deckbuilder** – click cards to add them. A deck is 1 Legend, 1 Chosen Champion, exactly 39 main deck cards (not counting the champion), 12 runes, 3 battlefields and up to 10 sideboard cards. Over-limit and banned cards are allowed while building and flagged as *Illegal* when you save. Ban list included (Standard and 2v2, as of 18 Sep 2026). The Decks tab shows the energy curve, a units/spells/gear pie chart and how many cards need power of each color, and **Deck on one page** shows every card with its count (Legend, runes, battlefields, main deck, sideboard), which can be saved as a PNG image.
 - **Match log** – record each round as best of 1 or best of 3. Opponents are identified by their **Legend**; their Chosen Champion is recorded too. Per game: result, who went first, score, both battlefields, and your sideboarding (arrows between main deck and sideboard, prefilled from your guide). Screenshots (upload or paste) come first, then replays and notes.
 - **History** – every recorded match with search (Legend, battlefield, event, notes), deck filter, per-game sideboarding, screenshots and replays.
 - **Matchups** – match, game 1 and post-board win rates per opponent Legend, going first vs second. *Chosen Champions* splits each Legend by the champion it ran. The **Battlefields** grid shows your game win rate with each of your battlefields against each of theirs, for all opponents or one matchup.
-- **Sideboard** – an in/out guide per opponent Legend and a copyable cheat sheet.
+- **Sideboard** – your own list of matchups, each an opponent Legend (with their Legend and Chosen Champion pictures), optionally narrowed to one Chosen Champion. Add them from card pictures, or import the opponents from your match log. Each has in/out swaps going first and going second, the battlefield to play in games 1–3 of a best of 3, and notes. Copy everything as a text cheat sheet, or download it as an .xlsx spreadsheet: your deck list, plus two columns per matchup (1st going first, 2nd going second) with the cards to take out and bring in and the battlefield order.
 - **Field** – expected match win rate for an event from the Legends you expect to face.
 - **Data** – JSON backup/import, CSV export of every match, format rules.
 - **Feedback** – email a bug report (opens with a template and browser details), or donate by PromptPay QR or KBank transfer.
