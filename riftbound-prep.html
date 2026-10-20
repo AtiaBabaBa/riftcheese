@@ -580,7 +580,7 @@ const DOMAINS = ['Fury','Calm','Mind','Body','Chaos','Order'];
 const LEGEND_SUGGEST = ["Ahri","Annie","Darius","Garen","Jinx","Kai'Sa","Lee Sin","Leona","Lux","Master Yi","Miss Fortune","Sett","Teemo","Viktor","Volibear","Yasuo"];
 // A deck: 1 Legend, 1 Chosen Champion, a main deck of exactly mainSize cards besides the champion, the runes, the battlefields and up to sideMax sideboard cards.
 const RULES_DEFAULT = { mainSize: 39, maxCopies: 3, runes: 12, battlefields: 3, sideMax: 10, format: 'standard', winPoints: 8 };
-const TABS = [['log','Match log'],['history','History'],['matchups','Matchups'],['sideboard','Sideboard'],['field','Field'],['decks','Decks'],['cards','Cards'],['data','Data'],['feedback','Feedback']];
+const TABS = [['log','Match log'],['history','History'],['matchups','Matchups'],['sideboard','Sideboard'],['decks','Decks'],['cards','Cards'],['data','Data'],['feedback','Feedback']];
 const TYPES = ['Legend','Unit','Spell','Gear','Rune','Battlefield'];
 // Official ban list (playriftbound.com announcements), current as of 18 Sep 2026.
 const BANS = {
@@ -589,7 +589,7 @@ const BANS = {
     'The Dreaming Tree', 'Obelisk of Power', "Reaver's Row", "The Arena's Greatest", "Aspirant's Climb"],
   twoVtwo: ['Master Yi, Wuju Bladesman'],
 };
-const SET_NAMES = { OGN: 'Origins', OGS: 'Proving Grounds', SFD: 'Spiritforged', UNL: 'Unleashed', VEN: 'Vendetta', OPP: 'OP Promo', PR: 'Promo', JDG: 'Judge' };
+const SET_NAMES = { OGN: 'Origins', OGS: 'Proving Grounds', SFD: 'Spiritforged', UNL: 'Unleashed', VEN: 'Vendetta', RAD: 'Radiance', OPP: 'OP Promo', PR: 'Promo', JDG: 'Judge' };
 
 // ---------- card database ----------
 const CDB = { ok: false, failed: false, cards: [], byKey: new Map(), sheets: [], imgBase: '', fetched: '', legends: [], legendAlias: new Map() };
@@ -637,7 +637,22 @@ function thumb(c, w, cls = '') {
 function cardTip(c) {
   if (!c) return 'Not found in the card database';
   const cost = [c.e != null ? c.e + ' energy' : '', c.p != null ? c.p + ' power' : '', c.m != null ? c.m + ' might' : ''].filter(Boolean).join(', ');
-  return `${c.n} · ${c.st ? c.st + ' ' : ''}${c.t}${c.d.length ? ' · ' + c.d.join('/') : ''}${cost ? ' · ' + cost : ''}${c.x ? '\n' + c.x : ''}`;
+  return `${c.n} · ${c.st ? c.st + ' ' : ''}${c.t}${c.d.length ? ' · ' + c.d.join('/') : ''}${cost ? ' · ' + cost : ''}${c.x ? '\n' + readable(c.x) : ''}`;
+}
+// Ability text the way players read it: icon codes become words (":rb_might:" → "might", ":rb_energy_2:" → "2 energy",
+// ":rb_rune_fury:" → "fury power", ":rb_rune_rainbow:" → "power").
+function readable(x) {
+  return String(x || '').replace(/:rb_([a-z0-9_]+):/g, (_, k) => ' ' + (k === 'rune_rainbow' ? 'power' : k.startsWith('energy_') ? k.slice(7) + ' energy'
+    : k.startsWith('rune_') ? k.slice(5) + ' power' : k.replace(/_/g, ' ')) + ' ').replace(/ {2,}/g, ' ').replace(/ ([.,:;)])/g, '$1').replace(/\( /g, '(').trim();
+}
+// Card search: every word typed has to appear somewhere on the card (name, type, domains, tags or ability text),
+// in any order, so "draw discard", "+2 might" or "stun exhaust" all find cards.
+const searchText = new WeakMap();
+function cardHasText(c, q) {
+  const words = norm(q).replace(/[\[\]]/g, '').split(' ').filter(Boolean); if (!words.length) return true;
+  let h = searchText.get(c);
+  if (h == null) { h = norm([c.n, c.st, c.t, ...(c.d || []), ...(c.g || []), readable(c.x)].join(' ').replace(/[\[\]]/g, '')); searchText.set(c, h); }
+  return words.every(w => h.includes(w));
 }
 // Colorless cards (every battlefield) fit any Legend.
 const fitsLegend = (c, L) => c.d.every(x => x === 'Colorless' || L.d.includes(x));
@@ -909,8 +924,8 @@ const loaded = { decks: false, matches: false, settings: false };
 
 const lsGet = k => { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch { return null; } };
 const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
-{ const u = lsGet(UI_KEY); if (u) Object.assign(S.ui, { tab: u.tab || 'log', deckId: u.deckId || null, statsScope: u.statsScope || 'deck', logFilter: u.logFilter || 'deck', showChamp: !!u.showChamp, bfOpp: u.bfOpp || '', bo: u.bo === 1 ? 1 : 3 }); }
-const saveUI = () => lsSet(UI_KEY, { tab: S.ui.tab, deckId: S.ui.deckId, statsScope: S.ui.statsScope, logFilter: S.ui.logFilter, showChamp: S.ui.showChamp, bfOpp: S.ui.bfOpp, bo: S.ui.bo });
+{ const u = lsGet(UI_KEY); if (u) Object.assign(S.ui, { tab: TABS.some(t => t[0] === u.tab) ? u.tab : 'log', deckId: u.deckId || null, statsScope: u.statsScope || 'deck', logFilter: u.logFilter || 'deck', showChamp: !!u.showChamp, bfOpp: u.bfOpp || '', bo: u.bo === 1 ? 1 : 3, hBo: u.hBo === 1 || u.hBo === 3 ? u.hBo : 0 }); }
+const saveUI = () => lsSet(UI_KEY, { tab: S.ui.tab, deckId: S.ui.deckId, statsScope: S.ui.statsScope, logFilter: S.ui.logFilter, showChamp: S.ui.showChamp, bfOpp: S.ui.bfOpp, bo: S.ui.bo, hBo: S.ui.hBo || 0 });
 
 // ---------- helpers ----------
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -1142,6 +1157,13 @@ function removeDoc(coll, id) {
   chains[key] = (chains[key] || Promise.resolve()).then(() => writeWithRetry(() => db.collection(coll).doc(id).delete()))
     .catch(dbError).finally(() => setTimeout(() => deleting.delete(id), 3000));
 }
+// A match and its uploaded screenshots and replay files.
+function dropMatch(id) {
+  const m = S.matches[id]; if (!m) return;
+  (m.replays || []).filter(x => x.kind === 'file').forEach(x => deleteAsset(x.id)); (m.shots || []).forEach(x => deleteAsset(x.id));
+  removeDoc('matches', id);
+  if (S.form && S.form.editId === id) S.form = blankForm();
+}
 function dbError(e) {
   const c = e && e.code;
   if (c === 'invalid_argument') toast('Not saved: you can view this prep book but not edit it.');
@@ -1304,7 +1326,7 @@ function render() {
   let html = '';
   if (hasExamples()) html += `<div class="banner"><span>You're looking at example data. Clear it when you're ready to add your own decks and matches.</span><span class="row">${S.ui.confirm === 'examples' ? `<span class="confirm">Delete all example data? <button class="btn sm danger" data-act="clear-examples">Delete</button><button class="btn sm" data-act="unconfirm">Keep</button></span>` : `<button class="btn sm" data-act="confirm" data-what="examples">Clear example data</button>`}</span></div>`;
   html += installBannerHTML();
-  const v = { log: viewLog, matchups: viewMatchups, sideboard: viewSideboard, field: viewField, decks: viewDecks, cards: viewCards, data: viewData, history: viewHistory, feedback: viewFeedback }[S.ui.tab] || viewLog;
+  const v = { log: viewLog, matchups: viewMatchups, sideboard: viewSideboard, decks: viewDecks, cards: viewCards, data: viewData, history: viewHistory, feedback: viewFeedback }[S.ui.tab] || viewLog;
   html += v();
   app.innerHTML = html;
   if (S.ui.tab === 'decks') renderDeckCheck();
@@ -1332,12 +1354,12 @@ function pic(n, w, cls = '') {
 }
 // In the match form, a card slot opens the picture picker for its field instead of the card's details.
 const PICKS = {
-  oppLegend: { title: 'Their Legend', ph: 'Search Legend or champion name' },
-  oppChamp: { title: 'Their Chosen Champion', ph: 'Search champion' },
-  myBf: { title: 'My battlefield', ph: 'Search battlefield' },
-  oppBf: { title: 'Their battlefield', ph: 'Search battlefield' },
-  sbLegend: { title: 'Their Legend', ph: 'Search Legend or champion name' },
-  sbChamp: { title: 'Their Chosen Champion', ph: 'Search champion' },
+  oppLegend: { title: 'Their Legend', ph: 'Search Legend, champion or ability text' },
+  oppChamp: { title: 'Their Chosen Champion', ph: 'Search champion or ability text' },
+  myBf: { title: 'My battlefield', ph: 'Search battlefield or ability text' },
+  oppBf: { title: 'Their battlefield', ph: 'Search battlefield or ability text' },
+  sbLegend: { title: 'Their Legend', ph: 'Search Legend, champion or ability text' },
+  sbChamp: { title: 'Their Chosen Champion', ph: 'Search champion or ability text' },
 };
 const isSbPick = p => p.kind === 'sbLegend' || p.kind === 'sbChamp';
 function pickPic(n, kind, i, w, cls = '') {
@@ -1368,7 +1390,7 @@ function pickGroups(p) {
 }
 function pickListHTML() {
   const p = S.ui.pick, q = norm(p.q), cur = cardKey(pickCur(p)), seen = new Set();
-  const hit = c => !q || norm(c.n).includes(q) || (c.g || []).some(t => norm(t).includes(q));
+  const hit = c => cardHasText(c, q);
   const body = pickGroups(p).map(([h, list]) => {
     const l = list.filter(c => !seen.has(c.k) && hit(c)).sort((a, b) => a.n.localeCompare(b.n)); l.forEach(c => seen.add(c.k));
     return l.length ? `${h ? `<h3 class="label pk-h">${esc(h)}</h3>` : ''}<div class="pk-grid${p.kind.endsWith('Bf') ? ' bf' : ''}">${l.map(c =>
@@ -1623,6 +1645,7 @@ function viewLog() {
 function historyMatches() {
   let list = sortedMatches();
   if (S.ui.logFilter === 'deck' && S.ui.deckId) list = list.filter(m => m.deckId === S.ui.deckId);
+  if (S.ui.hBo) list = list.filter(m => (m.bo === 1 ? 1 : 3) === S.ui.hBo);
   const q = norm(S.ui.hq);
   if (q) list = list.filter(m => [oppOf(m, false)?.legend, m.oppChamp, m.event, m.notes, ...(m.games || []).flatMap(g => [g.myBf, g.oppBf])].some(x => norm(x).includes(q)));
   return list;
@@ -1673,6 +1696,7 @@ function historyListHTML() {
   }).join('');
   const summary = `<p class="small muted num hist-sum">${list.length} match${list.length === 1 ? '' : 'es'} · ${rec(a.m)} · games ${a.g.W}–${a.g.L}</p>`;
   return rows ? summary + rows
+    : S.ui.hBo && !S.ui.hq ? `<div class="empty"><h3>No best of ${S.ui.hBo} matches${S.ui.logFilter === 'deck' ? ' for this deck' : ''}</h3><p>Switch to All to see every format.</p><button class="btn" data-act="h-bo" data-v="0">All formats</button></div>`
     : `<div class="empty"><h3>${S.ui.hq ? 'No matches found' : `No matches recorded${S.ui.logFilter === 'deck' ? ' for this deck' : ''}`}</h3><p>${S.ui.hq ? 'Try a different search, or switch to All decks.' : 'Record your rounds in the Match log tab and they’ll be listed here.'}</p>${S.ui.hq ? '' : '<button class="btn" data-act="tab" data-tab="log">Record a match</button>'}</div>`;
 }
 function viewHistory() {
@@ -1682,6 +1706,7 @@ function viewHistory() {
       <div class="row">
         <input id="h-q" type="search" placeholder="Search Legend, battlefield, event or notes" value="${esc(S.ui.hq)}" data-bind="hist" autocomplete="off" style="width:min(320px,100%)">
         <span class="seg" role="group" aria-label="Filter"><button class="N" data-act="log-filter" data-v="deck" aria-pressed="${S.ui.logFilter === 'deck'}">This deck</button><button class="N" data-act="log-filter" data-v="all" aria-pressed="${S.ui.logFilter === 'all'}">All decks</button></span>
+        <span class="seg" role="group" aria-label="Match format">${[[0, 'All'], [1, 'Bo1'], [3, 'Bo3']].map(([v, n]) => `<button class="N" data-act="h-bo" data-v="${v}" aria-pressed="${(S.ui.hBo || 0) === v}" title="${v ? `Only best of ${v} matches` : 'Best of 1 and best of 3'}">${n}</button>`).join('')}</span>
         ${champToggle()}
       </div>
     </div>
@@ -1930,50 +1955,6 @@ function copyBox() {
   return `<div class="copybox"><span class="small muted">Copying isn't available here. Select the text below and copy it.</span><textarea id="copy-fallback" readonly>${esc(S.ui.copy)}</textarea><div><button class="btn sm" data-act="close-copy">Done</button></div></div>`;
 }
 
-// --- Field
-function viewField() {
-  const d = curDeck(), field = S.settings.field || [];
-  const mine = d ? Object.values(S.matches).filter(m => m.deckId === d.id) : [];
-  const groups = byArch(mine, false);
-  let sumShare = 0, sumW = 0, known = 0;
-  const rows = field.map((f, i) => {
-    const g = groups.get(legendKey(f.arch)), a = g ? aggregate(g.list) : null, p = a ? pct(a.m) : null;
-    const share = +f.share || 0; sumShare += share; sumW += share * (p == null ? 0.5 : p); if (p != null) known += share;
-    return `<tr>
-      <td><div class="opp-cell">${pic(legendName(f.arch), 30)}<input id="fa-${i}" list="legend-list" value="${esc(legendName(f.arch))}" data-bind="field" data-i="${i}" data-k="arch" aria-label="Opponent Legend" style="min-width:160px"></div></td>
-      <td class="r"><input id="fs-${i}" type="number" min="0" max="100" step="1" value="${esc(f.share)}" data-bind="field" data-i="${i}" data-k="share" aria-label="Expected share" style="width:80px;text-align:right"></td>
-      <td>${wrCell(p)}</td>
-      <td class="num muted">${a ? rec(a.m) : '—'}</td>
-      <td><button class="btn sm link danger" data-act="field-del" data-i="${i}">Remove</button></td></tr>`;
-  }).join('');
-  const exp = sumShare ? sumW / sumShare : null;
-  const inField = new Set(field.map(f => legendKey(f.arch)));
-  const seen = [...byArch(Object.values(S.matches), false).values()].filter(g => !inField.has(g.key));
-  return `
-  <section class="panel">
-    <div class="panel-head">
-      <div><div class="label">Tournament prep</div><h2 class="section-title">Expected field</h2></div>
-      ${d ? `<span class="small muted">Win rates shown for <strong>${esc(d.name || 'Untitled deck')}</strong></span>` : ''}
-    </div>
-    <p class="muted" style="margin:0 0 14px;max-width:65ch">List the Legends you expect at the event and roughly what share of the room each will be. Your logged results against each one give an expected match win rate for the whole event. Legends with no results count as 50%.</p>
-    <div class="tiles" style="margin-bottom:16px">
-      <div class="tile"><span class="label">Expected match win rate</span><span class="v">${fmtPct(exp)}</span><span class="s">${d ? 'weighted by field share' : 'pick a deck'}</span></div>
-      <div class="tile"><span class="label">Field covered by data</span><span class="v">${sumShare ? Math.round(known / sumShare * 100) + '%' : '—'}</span><span class="s">of the share you listed</span></div>
-      <div class="tile"><span class="label">Shares listed</span><span class="v">${Math.round(sumShare)}%</span><span class="s">${Math.round(sumShare) === 100 ? 'adds up to 100%' : sumShare ? 'normalized to 100%' : 'none yet'}</span></div>
-    </div>
-    <div class="scroll"><table>
-      <thead><tr><th>Opponent Legend</th><th class="r">Share %</th><th>Your match win rate</th><th>Record</th><th></th></tr></thead>
-      <tbody>${rows || `<tr><td colspan="5" class="muted">No Legends in the field yet. Add the first one below.</td></tr>`}</tbody>
-    </table></div>
-    <form id="field-add" class="row" style="margin-top:12px" autocomplete="off">
-      <input id="fn-arch" list="legend-list" placeholder="Opponent Legend" style="flex:2;min-width:160px">
-      <input id="fn-share" type="number" min="0" max="100" placeholder="Share %" style="flex:1;min-width:90px">
-      <button class="btn primary" type="submit">Add to field</button>
-    </form>
-    ${seen.length ? `<div style="margin-top:14px"><div class="label" style="margin-bottom:6px">In your log, not in the field</div><div class="row">${seen.map(g => `<button class="btn sm" data-act="field-add-seen" data-arch="${esc(g.name)}">+ ${esc(g.name)} <span class="muted num">(${g.list.length})</span></button>`).join('')}</div></div>` : ''}
-  </section>`;
-}
-
 // --- Decks
 function viewDecks() {
   const l = deckList(), d = curDeck();
@@ -1991,7 +1972,7 @@ function viewDecks() {
   }).join('');
   let editor = '';
   if (d) {
-    const conf = S.ui.confirm === 'deck';
+    const conf = S.ui.confirm === 'deck', nm = Object.values(S.matches).filter(m => m.deckId === d.id).length;
     editor = `
     <section class="panel">
       <div class="panel-head">
@@ -2002,7 +1983,8 @@ function viewDecks() {
           <button class="btn sm" data-act="copy-deck">Copy list</button>
           <button class="btn sm" data-act="dv-open">Deck on one page</button>
           <button class="btn sm" data-act="dup-deck">Duplicate</button>
-          ${conf ? `<span class="confirm">Delete this deck? Its matches stay in the log. <button class="btn sm danger" data-act="del-deck">Delete</button><button class="btn sm" data-act="unconfirm">Keep</button></span>` : `<button class="btn sm danger" data-act="confirm" data-what="deck">Delete</button>`}
+          ${conf ? (nm ? `<span class="confirm" style="flex-wrap:wrap">Delete this deck, its sideboard guides and its ${nm} recorded match${nm === 1 ? '' : 'es'} with their screenshots and replays? <button class="btn sm danger" data-act="del-deck" data-all="1">Delete everything</button><button class="btn sm" data-act="del-deck">Delete deck, keep matches</button><button class="btn sm" data-act="unconfirm">Cancel</button></span>`
+            : `<span class="confirm">Delete this deck and its sideboard guides? <button class="btn sm danger" data-act="del-deck">Delete</button><button class="btn sm" data-act="unconfirm">Keep</button></span>`) : `<button class="btn sm danger" data-act="confirm" data-what="deck">Delete</button>`}
         </div>
       </div>
       ${reportHTML(d)}
@@ -2218,7 +2200,7 @@ function cardMatches() {
     (!f.doms.length || c.d.some(x => f.doms.includes(x))) &&
     (!f.costs.length || (c.e != null && f.costs.includes(String(Math.min(7, c.e))))) &&
     (!L || fitsLegend(c, L)) &&
-    (!q || c.k.includes(q) || norm(c.x).includes(q) || (c.g || []).some(t => norm(t).includes(q))));
+    cardHasText(c, q));
   if (f.sort === 'cost') list = list.slice().sort((a, b) => (a.e ?? 99) - (b.e ?? 99) || a.n.localeCompare(b.n));
   else list = list.slice().sort((a, b) => a.n.localeCompare(b.n));
   return list;
@@ -2372,7 +2354,7 @@ function cardDetailHTML() {
         <div class="small muted">${esc([c.st, c.t].filter(Boolean).join(' '))} · ${esc(c.r)}</div></div>
       <div class="row">${c.d.map(x => `<span class="dom"><i style="background:var(--${x.toLowerCase()})"></i>${x}</span>`).join('')}</div>
       ${c.e != null || c.p != null || c.m != null ? `<div class="tiles" style="grid-template-columns:repeat(auto-fit,minmax(70px,1fr))">${stat('Energy', c.e)}${stat('Power', c.p)}${stat('Might', c.m)}</div>` : ''}
-      ${c.x ? `<p style="margin:0;white-space:pre-wrap">${esc(c.x)}</p>` : ''}
+      ${c.x ? `<p style="margin:0;white-space:pre-wrap">${esc(readable(c.x))}</p>` : ''}
       ${(c.g || []).length ? `<div class="row">${c.g.map(t => `<span class="pill N" style="font-family:var(--f-body)">${esc(t)}</span>`).join('')}</div>` : ''}
       <div class="small muted">${c.s.map(s => esc(SET_NAMES[s] || s)).join(' · ')} · <a href="${esc(CDB.imgBase + c.u)}" target="_blank" rel="noopener" style="color:var(--accent)">Full-size image</a></div>
       ${actions}
@@ -2480,7 +2462,7 @@ function viewCards() {
   <div class="cards-layout">
     <section class="panel" style="min-width:0">
       <div class="build-bar">
-        <input id="cf-q" type="search" placeholder="Search name, rules text or tag (e.g. Zaun, Mech, discard)" value="${esc(f.q)}" data-bind="cf" data-k="q" autocomplete="off">
+        <input id="cf-q" type="search" placeholder="Search name or ability text (e.g. draw discard, +2 might, Zaun)" value="${esc(f.q)}" data-bind="cf" data-k="q" autocomplete="off">
         <div class="row" style="flex-wrap:nowrap"><span class="label">Add to</span>
           <span class="seg" role="group" aria-label="Click adds to"><button class="N" data-act="add-to" data-v="main" aria-pressed="${S.ui.addTo !== 'side'}">Main deck</button><button class="N" data-act="add-to" data-v="side" aria-pressed="${S.ui.addTo === 'side'}">Sideboard</button></span></div>
       </div>
@@ -2491,7 +2473,7 @@ function viewCards() {
         ${L ? `<button class="dom-toggle" data-act="cf-fits" aria-pressed="${f.fits}" title="Show only cards your Legend can use">Fits ${esc(L.d.join('/'))}</button>` : ''}
       </div>
       <div id="card-results">${cardResultsHTML()}</div>
-      <p class="small muted" style="margin:14px 0 0">Card data from Riftcodex, fetched ${esc(CDB.fetched)}. Card images belong to Riot Games.</p>
+      <p class="small muted" style="margin:14px 0 0">Card data from Riftcodex and, for Radiance, the official card gallery, updated ${esc(CDB.fetched)}. Card images belong to Riot Games.</p>
     </section>
     <aside class="panel deck-panel${S.ui.drawer ? ' open' : ''}" id="deck-panel" aria-label="Deck list">${deckPanelHTML()}</aside>
   </div>
@@ -3027,8 +3009,9 @@ document.addEventListener('click', e => {
         oppLegend: known ? o.legend : '', oppChamp: m.oppChamp || '', myLegend: m.myLegend ?? null, myChamp: m.myChamp ?? null, bo: m.bo === 1 ? 1 : 3, readInto: null };
       S.ui.sbOpen = null;
       S.ui.confirm = null; S.ui.tab = 'log'; saveUI(); render(); window.scrollTo(0, 0); break; }
-    case 'del-match': (S.matches[b.dataset.id]?.replays || []).filter(x => x.kind === 'file').forEach(x => deleteAsset(x.id)); (S.matches[b.dataset.id]?.shots || []).forEach(x => deleteAsset(x.id)); removeDoc('matches', b.dataset.id); S.ui.confirm = null; if (S.form.editId === b.dataset.id) S.form = blankForm(); toast('Match deleted'); render(); break;
+    case 'del-match': dropMatch(b.dataset.id); S.ui.confirm = null; toast('Match deleted'); render(); break;
     case 'log-filter': S.ui.logFilter = b.dataset.v; saveUI(); render(); break;
+    case 'h-bo': S.ui.hBo = +b.dataset.v === 1 ? 1 : +b.dataset.v === 3 ? 3 : 0; saveUI(); render(); break;
     case 'stats-scope': S.ui.statsScope = b.dataset.v; saveUI(); render(); break;
     case 'champ-toggle': S.ui.showChamp = !S.ui.showChamp; saveUI(); render(); break;
     case 'bf-show': S.ui.bfOpp = b.dataset.key; saveUI(); render(); document.getElementById('bf-panel')?.scrollIntoView({ block: 'start' }); break;
@@ -3047,7 +3030,10 @@ document.addEventListener('click', e => {
     case 'new-deck': newDeck(); break;
     case 'dup-deck': if (d) { newDeck(d); toast('Deck duplicated'); } break;
     case 'pick-deck': S.ui.deckId = b.dataset.id; S.ui.confirm = null; S.ui.pasteOpen = false; S.ui.copy = null; saveUI(); S.form.editId || (S.form.deckId = b.dataset.id); render(); break;
-    case 'del-deck': if (d) { removeDoc('decks', d.id); S.ui.confirm = null; S.ui.deckId = null; ensureDeck(); saveUI(); toast('Deck deleted'); render(); } break;
+    case 'del-deck': if (d) { const all = b.dataset.all === '1', ms = all ? Object.values(S.matches).filter(m => m.deckId === d.id) : [];
+      ms.forEach(m => dropMatch(m.id)); removeDoc('decks', d.id);
+      S.ui.confirm = null; S.ui.deckId = null; S.ui.guideKey = null; ensureDeck(); if (S.form && !S.form.editId) S.form.deckId = S.ui.deckId || ''; saveUI();
+      toast(ms.length ? `Deck and ${ms.length} match${ms.length === 1 ? '' : 'es'} deleted` : 'Deck deleted'); render(); } break;
     case 'dom': if (d) { const set = new Set(d.domains || []); set.has(b.dataset.v) ? set.delete(b.dataset.v) : set.add(b.dataset.v); d.domains = DOMAINS.filter(x => set.has(x)); persist('decks', d.id); render(); } break;
     case 'paste-open': S.ui.pasteOpen = true; S.ui.drawer = false; setTab('decks'); setTimeout(() => document.getElementById('paste-box')?.focus(), 0); break;
     case 'paste-toggle': S.ui.pasteOpen = !S.ui.pasteOpen; render(); break;
@@ -3063,8 +3049,6 @@ document.addEventListener('click', e => {
       S.ui.pasteOpen = false; persist('decks', d.id); render();
       toast(`Imported: main deck ${v.mt}, sideboard ${v.st}, runes ${v.rt}, battlefields ${v.bt}${unknown.length ? ` · ${unknown.length} name${unknown.length > 1 ? 's' : ''} not found: ${unknown.slice(0, 3).join(', ')}` : ''}`); } break;
     case 'copy-deck': if (d) copyText(deckText(d), 'Deck list copied'); break;
-    case 'field-del': { const f = S.settings.field || []; f.splice(+b.dataset.i, 1); persist('settings', 'main'); render(); break; }
-    case 'field-add-seen': { (S.settings.field = S.settings.field || []).push({ arch: b.dataset.arch, share: 0 }); persist('settings', 'main'); render(); break; }
     case 'rules-reset': S.settings.rules = { ...RULES_DEFAULT }; persist('settings', 'main'); render(); break;
     case 'export-json': exportBackup(); break;
     case 'export-csv': {
@@ -3156,9 +3140,6 @@ document.addEventListener('input', e => {
     if (k === 'name') { renderChrome(); }
   } else if (bind === 'guide' && d) {
     const g = curGuide(); if (g) { g[k] = el.value; persist('decks', d.id, 700); }
-  } else if (bind === 'field') {
-    const f = S.settings.field[+el.dataset.i]; if (!f) return;
-    f[k] = k === 'share' ? (el.value === '' ? '' : Math.max(0, +el.value)) : el.value; persist('settings', 'main', 600);
   } else if (bind === 'rules') {
     S.settings.rules = { ...rules(), [k]: k === 'format' ? el.value : Math.max(0, parseInt(el.value, 10) || 0) }; persist('settings', 'main', 600);
   }
@@ -3179,13 +3160,12 @@ document.addEventListener('change', e => {
     if (el.value && j >= 0 && j !== i) bf[j] = bf[i];
     bf[i] = el.value; g.bf = bf; persist('decks', d.id); render(); return;
   }
-  if (el.dataset && el.dataset.bind === 'field' && el.dataset.k === 'arch') { const f = S.settings.field[+el.dataset.i]; if (f) { f.arch = legendName(el.value); persist('settings', 'main'); } render(); return; }
   if (el.id === 'd-legend' || el.id === 'd-champion') {
     const d = curDeck(), L = legendOf(d);
     if (d && L && el.id === 'd-legend') { d.domains = L.d.slice(); persist('decks', d.id); }
     render(); return;
   }
-  if (el.dataset && (el.dataset.bind === 'field' || el.dataset.bind === 'rules')) { render(); return; }
+  if (el.dataset && el.dataset.bind === 'rules') { render(); return; }
   if (el.id === 'shot-file' && el.files && el.files.length) { uploadShots([...el.files]); el.value = ''; return; }
   if (el.id === 'rp-file' && el.files && el.files[0]) { uploadReplay(el.files[0]); el.value = ''; return; }
   if (el.id === 'import-file' && el.files && el.files[0]) {
@@ -3214,11 +3194,6 @@ document.addEventListener('submit', e => {
     const msg = addCard(c, e.submitter && e.submitter.dataset.sec === 'side' ? 'side' : 'main'); if (!msg) return;
     inp.value = ''; toast(msg); render();
     setTimeout(() => document.getElementById('qa-name')?.focus(), 0);
-  }
-  else if (f.id === 'field-add') {
-    const a = document.getElementById('fn-arch').value.trim(), s = document.getElementById('fn-share').value; if (!a) return;
-    (S.settings.field = S.settings.field || []).push({ arch: legendName(a), share: s === '' ? 0 : Math.max(0, +s) }); persist('settings', 'main'); render();
-    setTimeout(() => document.getElementById('fn-arch')?.focus(), 0);
   }
 });
 // ---------- install as an app ----------
