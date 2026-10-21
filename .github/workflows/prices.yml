@@ -1,0 +1,33 @@
+# Refreshes cards/prices.json (TCGplayer prices for the Portfolio tab) once a day.
+# tcgcsv.com updates around 20:00 UTC; this runs half an hour later and commits only when something changed.
+# Run it by hand from the Actions tab (Update card prices → Run workflow).
+name: Update card prices
+
+on:
+  schedule:
+    - cron: '30 20 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: prices
+  cancel-in-progress: false
+
+jobs:
+  prices:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch prices
+        run: python3 scripts/fetch_prices.py
+      - name: Commit if changed
+        run: |
+          git add cards/prices.json
+          if git diff --cached --quiet; then echo "Prices unchanged"; exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898728+github-actions[bot]@users.noreply.github.com'
+          git commit -m "Update card prices"
+          git pull --rebase
+          git push

@@ -11,6 +11,7 @@ A tournament-prep tool for the Riftbound TCG: build decks from the full card dat
 - **History** – every recorded match with search (Legend, battlefield, event, notes), deck filter, best of 1 / best of 3 filter, per-game sideboarding, screenshots and replays.
 - **Matchups** – match, game 1 and post-board win rates per opponent Legend, going first vs second. *Chosen Champions* splits each Legend by the champion it ran. The **Battlefields** grid shows your game win rate with each of your battlefields against each of theirs, for all opponents or one matchup.
 - **Sideboard** – your own list of matchups, each an opponent Legend (with their Legend and Chosen Champion pictures), optionally narrowed to one Chosen Champion. Add them from card pictures, or import the opponents from your match log. Each has in/out swaps going first and going second, the battlefield to play in games 1–3 of a best of 3, and notes. Copy everything as a text cheat sheet, or download it as an .xlsx spreadsheet: your deck list, plus two columns per matchup (1st going first, 2nd going second) with the cards to take out and bring in and the battlefield order.
+- **Portfolio** – show off the cards you own, in the exact printing (alternate art, overnumbered, signature, metal, promos, foil or normal, even sealed product), valued at TCGplayer market prices. The total gives the portfolio a rank from Iron to Challenger, and the higher the rank the grander it looks: gilded frames from Gold, sparkles from Diamond, a moving shine from Master. The three most valuable cards stand on a podium. Values can be shown in baht and other currencies. **Share** makes a link that shows the portfolio (read-only, at today's prices) to anyone, no account needed.
 - **Data** – JSON backup/import, CSV export of every match, format rules.
 - **Feedback** – email a bug report (opens with a template and browser details), or donate by PromptPay QR or KBank transfer.
 
@@ -41,6 +42,14 @@ It runs on a free [Supabase](https://supabase.com) project. One-time setup:
 
 The anon key is meant to be public; access is limited by the row-level security rules in `setup.sql`. Free projects pause after a week with no activity; open the Supabase dashboard and click *Restore* if that happens. There is no password reset, so players should keep their passwords safe.
 
+## Card prices (Portfolio tab)
+
+TCGplayer's API is closed to new developers, so prices come from [tcgcsv.com](https://tcgcsv.com), which copies TCGplayer's product list and prices once a day. Browsers can't read tcgcsv.com from another site, so [`scripts/fetch_prices.py`](scripts/fetch_prices.py) saves them to `cards/prices.json`, which is served with the page. It also saves exchange rates from [open.er-api.com](https://open.er-api.com) for showing values in other currencies.
+
+The GitHub Action [`.github/workflows/prices.yml`](.github/workflows/prices.yml) runs it every day at 20:30 UTC (after tcgcsv.com updates) and commits the file when prices changed, which republishes the site. To run it now: **Actions → Update card prices → Run workflow**, or locally `python scripts/fetch_prices.py`, then commit and push. If the repository has no activity for 60 days GitHub pauses scheduled workflows; re-enable it on the Actions tab.
+
+Portfolios are saved with the rest of the player's data (browser, cloud account and backups). A shared link holds the portfolio itself after `#folio=`, so it needs no server.
+
 ## Screenshot reading
 
 Built but switched off for now (`READ_SHOTS = false` in `riftbound-prep.html`). When on, marking a Riftatlas screenshot as *Final result* sends it to Claude (Anthropic's AI model) through a Supabase Edge Function, [`supabase/functions/read-shot`](supabase/functions/read-shot/index.ts). Claude reads the board and the game log and the match form is filled in for the player to check. Only signed-in accounts can use it, up to 30 screenshots per account per day. To turn it on:
@@ -70,12 +79,13 @@ Ads never appear in the Claude artifact version. `privacy.html` explains the ads
 - `riftbound-prep.html` – the source page (also used as a Claude artifact).
 - `supabase/setup.sql` – database tables, file bucket and access rules for cloud saving, and the daily counter for screenshot reading.
 - `supabase/functions/read-shot/index.ts` – the Edge Function that reads a final-result screenshot with Claude.
+- `scripts/fetch_prices.py` – refreshes `cards/prices.json` (TCGplayer prices and exchange rates for the Portfolio tab); run daily by `.github/workflows/prices.yml`.
 - `scripts/build_index.py` – regenerates `index.html` from the source (and `ads.txt` when ads are set up): `python scripts/build_index.py`.
 - `privacy.html` – privacy page linked from the footer.
 - `manifest.webmanifest`, `sw.js`, `icons/` – what makes the site installable: the app manifest, the service worker (offline cache) and home-screen icons. `python scripts/make_icons.py` redraws the icons.
 - `images/promptpay-qr.jpg` – the donation QR code shown in the Feedback tab.
-- `cards/` – card data (`cards.json`) and image sprite sheets.
+- `cards/` – card data (`cards.json`), image sprite sheets and TCGplayer prices (`prices.json`).
 
 ## Credits
 
-Card data from [Riftcodex](https://riftcodex.com); Radiance cards from the official [Riftbound card gallery](https://riftbound.leagueoflegends.com/en-us/card-gallery/). Riftbound, its cards and card images are the property of Riot Games. This is an unofficial fan tool, not endorsed by or affiliated with Riot Games.
+Card data from [Riftcodex](https://riftcodex.com); Radiance cards from the official [Riftbound card gallery](https://riftbound.leagueoflegends.com/en-us/card-gallery/). Prices and portfolio card pictures from [TCGplayer](https://www.tcgplayer.com), through [tcgcsv.com](https://tcgcsv.com). Riftbound, its cards and card images are the property of Riot Games. This is an unofficial fan tool, not endorsed by or affiliated with Riot Games.

@@ -484,6 +484,137 @@ a.btn { display: inline-block; text-decoration: none; }
 .give dd { margin: 0; }
 .give .num-big { font-family: var(--f-mono); font-size: 18px; font-weight: 700; margin-right: 6px; }
 @media (max-width: 640px) { .give { grid-template-columns: 1fr; justify-items: center; } .give dl { justify-self: stretch; } }
+/* portfolio: the vault (value, rank, most valuable cards) gets richer with each rank. Every rank has its own
+   palette; from Silver on the panel gets a sheen, Gold adds a gilded frame (on the cards too), Diamond sparkles,
+   Master a moving shine on the value and the top cards, Challenger a turning halo. */
+.folio { display: grid; gap: 20px; min-width: 0;
+  --v-bg1: #34373D; --v-bg2: #1B1D21; --v-ink: #ECEEF1; --v-mute: rgba(236, 238, 241, .68); --v-line: rgba(255, 255, 255, .13);
+  --v-m1: #6E737B; --v-m2: #B5BAC2; --v-m3: #4A4E55; --v-glow: rgba(0, 0, 0, 0);
+  --v-metal: linear-gradient(135deg, var(--v-m3), var(--v-m2) 32%, var(--v-m1) 52%, var(--v-m2) 72%, var(--v-m3)); }
+.folio.t-bronze { --v-bg1: #3D2B1E; --v-bg2: #1C130D; --v-m1: #9A6338; --v-m2: #EDB689; --v-m3: #5E3A1F; --v-glow: rgba(237, 182, 137, .16); }
+.folio.t-silver { --v-bg1: #2E3744; --v-bg2: #141920; --v-m1: #8D99A8; --v-m2: #F1F5F9; --v-m3: #5C6672; --v-glow: rgba(220, 232, 245, .18); }
+.folio.t-gold { --v-bg1: #2E2412; --v-bg2: #110D05; --v-m1: #C08E2E; --v-m2: #FFEBA8; --v-m3: #8A5F12; --v-glow: rgba(255, 210, 110, .24); }
+.folio.t-platinum { --v-bg1: #12393B; --v-bg2: #061618; --v-m1: #5FB0A8; --v-m2: #E6FFFA; --v-m3: #2F7770; --v-glow: rgba(140, 240, 228, .22); }
+.folio.t-emerald { --v-bg1: #0B3A28; --v-bg2: #03140D; --v-m1: #22A872; --v-m2: #B5FBDA; --v-m3: #0D6845; --v-glow: rgba(60, 225, 150, .24); }
+.folio.t-diamond { --v-bg1: #182A5A; --v-bg2: #060B1C; --v-m1: #7FA8FF; --v-m2: #F4F8FF; --v-m3: #4566C8; --v-glow: rgba(130, 175, 255, .3); }
+.folio.t-master { --v-bg1: #34114F; --v-bg2: #0E0418; --v-m1: #C08AF0; --v-m2: #FBEAFF; --v-m3: #7536AD; --v-glow: rgba(196, 128, 255, .32); }
+.folio.t-grandmaster { --v-bg1: #4A0C13; --v-bg2: #120305; --v-m1: #E8605A; --v-m2: #FFE0CF; --v-m3: #9C1E22; --v-glow: rgba(255, 96, 84, .32); }
+.folio.t-challenger { --v-bg1: #0C2238; --v-bg2: #04070E; --v-m1: #F2C14E; --v-m2: #FFF7DC; --v-m3: #2DB8D2; --v-glow: rgba(90, 220, 255, .3);
+  --v-metal: linear-gradient(135deg, #B8862B, #FFF7DC 30%, #F2C14E 48%, #8FF0FF 68%, #2DB8D2); }
+.vault { position: relative; overflow: hidden; isolation: isolate; border-radius: 14px; color: var(--v-ink); color-scheme: dark; padding: 22px 24px 26px; display: grid; gap: 24px;
+  border: 1px solid var(--v-line); background: radial-gradient(120% 95% at 88% -12%, var(--v-glow), transparent 62%), linear-gradient(155deg, var(--v-bg1), var(--v-bg2)); }
+.fx-sheen .vault::before { content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none; background: linear-gradient(112deg, transparent 28%, rgba(255, 255, 255, .07) 44%, transparent 60%); }
+.v-frame, .v-frame2 { display: none; position: absolute; pointer-events: none; z-index: 2; }
+.fx-frame .v-frame { display: block; inset: 0; border-radius: inherit; padding: 2px; background: var(--v-metal);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask-composite: exclude; }
+.fx-frame .v-frame2 { display: block; inset: 8px; border: 1px solid var(--v-m1); border-radius: 9px; opacity: .5; }
+.fx-frame .v-frame2::before, .fx-frame .v-frame2::after { content: ""; position: absolute; left: 50%; width: 9px; height: 9px; background: var(--v-metal); transform: translateX(-50%) rotate(45deg); }
+.v-frame2::before { top: -5px; } .v-frame2::after { bottom: -5px; }
+@property --v-ang { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+.fx-halo .v-frame { padding: 3px; background: conic-gradient(from var(--v-ang), #F2C14E, #3FD0E6, #FFF7DC, #F2C14E, #3FD0E6, #FFF7DC, #F2C14E); animation: v-halo 7s linear infinite; }
+@keyframes v-halo { to { --v-ang: 360deg; } }
+.v-fx { position: absolute; inset: 0; z-index: 0; pointer-events: none; }
+.v-fx i { position: absolute; width: var(--s); height: var(--s); opacity: 0; background: radial-gradient(circle, #fff, var(--v-m2) 55%, transparent 72%);
+  clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%); animation: v-twinkle 3.8s ease-in-out infinite; animation-delay: var(--d); }
+@keyframes v-twinkle { 0%, 100% { opacity: 0; transform: scale(.35); } 50% { opacity: .95; transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .v-fx i { opacity: .55; } }
+.v-head, .v-jewels, .v-sec { position: relative; z-index: 1; }
+.v-head { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 16px 24px; align-items: center; }
+.v-crest { display: grid; justify-items: center; gap: 6px; width: 120px; }
+.v-crest svg { width: 108px; height: 108px; overflow: visible; filter: drop-shadow(0 6px 16px var(--v-glow)); }
+.v-rank { font-family: var(--f-display); font-weight: 700; font-size: 13px; letter-spacing: .2em; text-transform: uppercase; text-align: center; }
+.v-metal, .v-rank, .v-total { background-image: var(--v-metal); -webkit-background-clip: text; background-clip: text; color: transparent; -webkit-text-fill-color: transparent; }
+.v-main { display: grid; gap: 4px; min-width: 0; }
+.v-kicker { font-size: 11.5px; text-transform: uppercase; letter-spacing: .14em; font-weight: 600; color: var(--v-mute); }
+.vault .v-name { font-family: var(--f-display); font-size: 21px; font-weight: 700; letter-spacing: .02em; color: var(--v-ink); background: transparent; border: 1px solid transparent; border-radius: 6px; padding: 1px 6px; margin-left: -7px; width: 100%; max-width: 30ch; overflow-wrap: anywhere; }
+.vault input.v-name:hover { border-color: var(--v-line); }
+.vault input.v-name:focus-visible { border-color: var(--v-m1); outline: none; background: rgba(0, 0, 0, .2); }
+.vault input.v-name::placeholder { color: var(--v-mute); }
+.v-total { font-family: var(--f-display); font-weight: 700; font-size: clamp(36px, 7vw, 62px); line-height: 1.05; letter-spacing: .01em; overflow-wrap: anywhere; padding-block: 2px; }
+.fx-shimmer .v-total { background-image: linear-gradient(100deg, transparent 42%, rgba(255, 255, 255, .95) 50%, transparent 58%), var(--v-metal);
+  background-size: 300% 100%, 100% 100%; background-repeat: no-repeat; animation: v-shine 5.5s ease-in-out infinite; }
+@keyframes v-shine { 0% { background-position: 100% 0, 0 0; } 55%, 100% { background-position: 0% 0, 0 0; } }
+.v-sub { font-size: 14px; color: var(--v-mute); }
+.v-next { display: grid; gap: 6px; margin-top: 8px; max-width: 420px; font-size: 13px; color: var(--v-mute); }
+.v-bar { height: 6px; border-radius: 3px; background: rgba(255, 255, 255, .1); overflow: hidden; }
+.v-bar b { display: block; height: 100%; background: var(--v-metal); border-radius: 3px; }
+.v-ladder { display: flex; gap: 7px; align-items: center; margin-top: 4px; }
+.v-ladder i { width: 9px; height: 9px; border-radius: 2px; transform: rotate(45deg); background: var(--c); opacity: .25; }
+.v-ladder i.on { opacity: .85; }
+.v-ladder i.cur { width: 13px; height: 13px; opacity: 1; box-shadow: 0 0 10px var(--c); }
+.v-act { display: grid; gap: 8px; justify-items: stretch; align-self: start; min-width: 150px; }
+.vault .btn { background: rgba(255, 255, 255, .07); border-color: var(--v-line); color: var(--v-ink); }
+.vault .btn:hover { border-color: var(--v-m1); }
+.vault .btn.primary { background: var(--v-metal); border-color: transparent; color: #15110A; }
+.vault select { background: rgba(0, 0, 0, .28); border-color: var(--v-line); color: var(--v-ink); }
+.v-sec { display: flex; align-items: center; gap: 14px; font-family: var(--f-display); font-weight: 700; font-size: 12.5px; letter-spacing: .22em; text-transform: uppercase; color: var(--v-mute); margin-bottom: -6px; }
+.v-sec::before, .v-sec::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, transparent, var(--v-m1), transparent); opacity: .7; }
+.v-jewels { display: flex; justify-content: center; align-items: flex-end; gap: clamp(12px, 3.5vw, 32px); }
+.jewel { margin: 0; display: grid; gap: 10px; justify-items: center; width: min(27%, 190px); text-align: center; }
+.jewel.j1 { width: min(34%, 240px); order: 2; } .jewel.j2 { order: 1; } .jewel.j3 { order: 3; }
+.j-frame { position: relative; display: block; width: 100%; aspect-ratio: 200 / 279; padding: 3px; border: 0; border-radius: 12px; background: var(--v-metal); cursor: pointer; overflow: hidden;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, .5), 0 0 calc(4px + var(--lvl) * 3px) var(--v-glow); transition: transform .2s; }
+.j-frame:hover, .j-frame:focus-visible { transform: translateY(-3px); }
+.j-frame img, .j-frame .cimg { display: block; width: 100%; height: 100%; object-fit: contain; border-radius: 9px; background: #0B0D12; }
+.fx-shimmer .j-frame::after { content: ""; position: absolute; inset: 3px; border-radius: 9px; pointer-events: none; mix-blend-mode: overlay;
+  background: linear-gradient(115deg, transparent 38%, rgba(255, 255, 255, .55) 47%, rgba(170, 220, 255, .4) 53%, transparent 62%); background-size: 300% 100%; animation: v-holo 6s ease-in-out infinite; }
+@keyframes v-holo { 0% { background-position: 100% 0; } 60%, 100% { background-position: 0% 0; } }
+.jewel figcaption { display: grid; gap: 2px; justify-items: center; min-width: 0; }
+.j-rk { font-family: var(--f-display); font-weight: 700; font-size: 12px; letter-spacing: .16em; }
+.j-n { font-weight: 700; font-size: 14px; line-height: 1.2; overflow-wrap: anywhere; }
+.j-v { font-size: 12px; color: var(--v-mute); }
+.j-p { margin-top: 4px; padding: 3px 12px; border-radius: 999px; background: var(--v-metal); color: #15110A; font-weight: 700; font-size: 14px; white-space: nowrap; }
+.pf-tools { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.pf-tools input { width: 210px; }
+.pf-tools select { width: auto; }
+.pf-grid { display: grid; gap: 18px 12px; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); align-items: start; }
+.pf-card { display: grid; gap: 5px; align-content: start; min-width: 0; }
+.pf-img { position: relative; display: block; width: 100%; aspect-ratio: 200 / 279; padding: 0; border: 1px solid var(--line); border-radius: 9px; background: var(--panel-2); overflow: hidden; cursor: pointer; }
+.fx-frame .pf-img { border: 0; padding: 2px; background: var(--v-metal); }
+.pf-img img, .pf-img .cimg { display: block; width: 100%; height: 100%; object-fit: contain; border-radius: 7px; }
+.pf-img:hover, .pf-img:focus-visible { box-shadow: 0 0 0 2px var(--accent); }
+img.timg.gone { visibility: hidden; }
+.pf-q { position: absolute; right: 6px; bottom: 6px; background: rgba(10, 12, 16, .85); color: #fff; font: 700 13px var(--f-mono); padding: 2px 7px; border-radius: 6px; }
+.pf-foil { position: absolute; left: 6px; top: 6px; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; padding: 1px 6px; border-radius: 4px; color: #1A1406;
+  background: linear-gradient(120deg, #FFD3F1, #C9F0FF 35%, #FFF3B0 65%, #D4FFD8); }
+.pf-n { font-weight: 700; font-size: 14px; line-height: 1.25; overflow-wrap: anywhere; }
+.pf-v { font-size: 12px; color: var(--muted); overflow-wrap: anywhere; }
+.pf-p { display: flex; gap: 6px; align-items: baseline; flex-wrap: wrap; }
+.pf-p b { font-weight: 600; }
+.pf-ctl { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.pf-ctl .mi-x { margin-left: auto; }
+.pf-fin button { padding: 3px 8px; font-size: 12px; min-width: 0; }
+.pf-foot { margin: 16px 0 0; max-width: 75ch; }
+.pfa-bar { flex-wrap: wrap; }
+.pfa-bar input { flex: 1 1 220px; }
+.pfa-bar select { width: auto; flex: 0 1 auto; }
+.pfa-grid { display: grid; gap: 16px 10px; grid-template-columns: repeat(auto-fill, minmax(136px, 1fr)); align-items: start; }
+.pfa { display: grid; gap: 4px; align-content: start; min-width: 0; }
+.pfa .pf-img { cursor: default; }
+.pfa .pf-img:hover { box-shadow: none; }
+.pfa-n { font-weight: 700; font-size: 13px; line-height: 1.25; overflow-wrap: anywhere; }
+.pfa-v { font-size: 11.5px; color: var(--muted); overflow-wrap: anywhere; }
+.pfa-add { display: grid; gap: 4px; margin-top: 2px; }
+.pfa-add .btn { display: flex; justify-content: space-between; gap: 6px; padding-inline: 8px; }
+.pfa-have { font-size: 12px; font-weight: 600; color: var(--accent); }
+.pf-detail { grid-template-columns: minmax(0, 260px) minmax(0, 1fr); }
+.pf-detail .pf-img { cursor: default; }
+.pf-detail table { width: auto; min-width: 200px; }
+@media (max-width: 700px) {
+  .vault { padding: 18px 16px 22px; gap: 20px; }
+  .v-head { grid-template-columns: auto minmax(0, 1fr); gap: 14px 16px; }
+  .v-crest { width: 80px; } .v-crest svg { width: 74px; height: 74px; } .v-rank { font-size: 11px; letter-spacing: .14em; }
+  .v-act { grid-column: 1 / -1; display: flex; flex-wrap: wrap; min-width: 0; }
+  .v-act > * { flex: 1 1 auto; }
+  .v-act select { flex: 0 1 auto; width: auto; }
+  .jewel { width: 29%; } .jewel.j1 { width: 36%; }
+  .j-n { font-size: 12.5px; } .j-v { font-size: 11px; } .j-p { font-size: 12.5px; padding: 2px 9px; }
+  .pf-tools, .pf-tools input { width: 100%; } .pf-tools input { flex: 1 1 160px; }
+  .pf-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 16px 10px; }
+  .pf-detail { grid-template-columns: minmax(0, 1fr); justify-items: center; }
+  .pf-detail .pf-img { max-width: 240px; }
+}
 /* ad slot + footer */
 .ad { margin: 0 0 20px; padding: 8px 12px 12px; background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); display: grid; gap: 6px; min-width: 0; overflow: hidden; }
 .ad-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 600; }
@@ -596,7 +727,7 @@ const DOMAINS = ['Fury','Calm','Mind','Body','Chaos','Order'];
 const LEGEND_SUGGEST = ["Ahri","Annie","Darius","Garen","Jinx","Kai'Sa","Lee Sin","Leona","Lux","Master Yi","Miss Fortune","Sett","Teemo","Viktor","Volibear","Yasuo"];
 // A deck: 1 Legend, 1 Chosen Champion, a main deck of exactly mainSize cards besides the champion, the runes, the battlefields and up to sideMax sideboard cards.
 const RULES_DEFAULT = { mainSize: 39, maxCopies: 3, runes: 12, battlefields: 3, sideMax: 10, format: 'standard', winPoints: 8 };
-const TABS = [['log','Match log'],['history','History'],['matchups','Matchups'],['sideboard','Sideboard'],['decks','Decks'],['cards','Cards'],['data','Data'],['feedback','Feedback']];
+const TABS = [['log','Match log'],['history','History'],['matchups','Matchups'],['sideboard','Sideboard'],['decks','Decks'],['cards','Cards'],['portfolio','Portfolio'],['data','Data'],['feedback','Feedback']];
 const TYPES = ['Legend','Unit','Spell','Gear','Rune','Battlefield'];
 // Official ban list (playriftbound.com announcements), current as of 18 Sep 2026.
 const BANS = {
@@ -940,8 +1071,8 @@ const loaded = { decks: false, matches: false, settings: false };
 
 const lsGet = k => { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch { return null; } };
 const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
-{ const u = lsGet(UI_KEY); if (u) Object.assign(S.ui, { tab: TABS.some(t => t[0] === u.tab) ? u.tab : 'log', deckId: u.deckId || null, statsScope: u.statsScope || 'deck', logFilter: u.logFilter || 'deck', showChamp: !!u.showChamp, bfOpp: u.bfOpp || '', bo: u.bo === 1 ? 1 : 3, hBo: u.hBo === 1 || u.hBo === 3 ? u.hBo : 0 }); }
-const saveUI = () => lsSet(UI_KEY, { tab: S.ui.tab, deckId: S.ui.deckId, statsScope: S.ui.statsScope, logFilter: S.ui.logFilter, showChamp: S.ui.showChamp, bfOpp: S.ui.bfOpp, bo: S.ui.bo, hBo: S.ui.hBo || 0 });
+{ const u = lsGet(UI_KEY); if (u) Object.assign(S.ui, { tab: TABS.some(t => t[0] === u.tab) ? u.tab : 'log', deckId: u.deckId || null, statsScope: u.statsScope || 'deck', logFilter: u.logFilter || 'deck', showChamp: !!u.showChamp, bfOpp: u.bfOpp || '', bo: u.bo === 1 ? 1 : 3, hBo: u.hBo === 1 || u.hBo === 3 ? u.hBo : 0, cur: u.cur || '', pfSort: u.pfSort || 'value' }); }
+const saveUI = () => lsSet(UI_KEY, { tab: S.ui.tab, deckId: S.ui.deckId, statsScope: S.ui.statsScope, logFilter: S.ui.logFilter, showChamp: S.ui.showChamp, bfOpp: S.ui.bfOpp, bo: S.ui.bo, hBo: S.ui.hBo || 0, cur: S.ui.cur || '', pfSort: S.ui.pfSort || 'value' });
 
 // ---------- helpers ----------
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -1342,7 +1473,7 @@ function render() {
   let html = '';
   if (hasExamples()) html += `<div class="banner"><span>You're looking at example data. Clear it when you're ready to add your own decks and matches.</span><span class="row">${S.ui.confirm === 'examples' ? `<span class="confirm">Delete all example data? <button class="btn sm danger" data-act="clear-examples">Delete</button><button class="btn sm" data-act="unconfirm">Keep</button></span>` : `<button class="btn sm" data-act="confirm" data-what="examples">Clear example data</button>`}</span></div>`;
   html += installBannerHTML();
-  const v = { log: viewLog, matchups: viewMatchups, sideboard: viewSideboard, decks: viewDecks, cards: viewCards, data: viewData, history: viewHistory, feedback: viewFeedback }[S.ui.tab] || viewLog;
+  const v = { log: viewLog, matchups: viewMatchups, sideboard: viewSideboard, decks: viewDecks, cards: viewCards, data: viewData, history: viewHistory, feedback: viewFeedback, portfolio: viewPortfolio }[S.ui.tab] || viewLog;
   html += v();
   app.innerHTML = html;
   if (S.ui.tab === 'decks') renderDeckCheck();
@@ -2570,8 +2701,256 @@ function viewFeedback() {
   </section>`;
 }
 
+// --- Portfolio: the cards a player wants to show off, valued at TCGplayer prices
+// cards/prices.json holds every Riftbound product on TCGplayer (each printing: alternate art, overnumbered, signature,
+// promos, sealed) with its market price in US dollars per finish (N normal, F foil), refreshed daily by
+// scripts/fetch_prices.py from a GitHub Action, plus exchange rates (fx) for showing values in other currencies.
+const PR = { ok: false, failed: false, loading: false, list: [], byId: new Map(), updated: '', fx: {}, sets: {} };
+async function loadPrices() {
+  if (PR.ok || PR.loading) return;
+  PR.loading = true; PR.failed = false;
+  try {
+    const r = await fetch('cards/prices.json'); if (!r.ok) throw 0;
+    const j = await r.json();
+    PR.list = j.products; PR.updated = j.updated || ''; PR.fx = j.fx || {}; PR.sets = j.sets || {};
+    j.products.forEach(p => PR.byId.set(p.id, p));
+    PR.ok = true;
+  } catch { PR.failed = true; }
+  PR.loading = false;
+  if (S.ui.tab === 'portfolio') render();
+}
+// The portfolio is kept in settings, so it syncs, saves and backs up with everything else:
+// { name, items: [{ pid, f, q, at }] }, pid = TCGplayer product id, f = finish ('N' or 'F'), q = copies, at = when added.
+const folio = () => S.settings.folio || (S.settings.folio = { name: '', items: [] });
+const folioName = F => F.name || (F === S.ui.shared ? 'A Riftbound collection' : cloud.user ? `${cloud.name}’s collection` : 'My collection');
+const FINISH = { N: 'Normal', F: 'Foil' };
+const pFinishes = p => ['N', 'F'].filter(f => p[f] != null);
+const pTop = p => Math.max(p.N ?? -1, p.F ?? -1);
+// The card's name as the rest of the app writes it, and the printing it is ("Alternate Art", "Metal · Prize Wall").
+const pName = p => (p.k && CDB.byKey.get(p.k)?.n) || p.n.replace(/\s*\([^)]*\)/g, '').trim();
+const pVariant = p => (p.n.match(/\(([^)]*)\)/g) || []).map(x => x.slice(1, -1)).join(' · ');
+const pLine = p => [pVariant(p), p.sealed ? PR.sets[p.s] || p.s : `${p.s} ${p.no || ''}`.trim()].filter(Boolean).join(' · ');
+const prodImg = (p, w = 200) => `<img class="timg" src="https://tcgplayer-cdn.tcgplayer.com/product/${p.id}_${w}w.jpg" alt="${esc(p.n)}" loading="lazy" decoding="async"${p.k ? ` data-k="${esc(p.k)}"` : ''}>`;
+const pSearch = new WeakMap();
+function prodHasText(p, words) {
+  let h = pSearch.get(p);
+  if (h == null) { h = norm([pName(p), p.n, p.s, PR.sets[p.s], p.no, p.r, p.F != null ? 'foil' : '', p.sealed ? 'sealed' : ''].join(' ')); pSearch.set(p, h); }
+  return words.every(w => h.includes(w));
+}
+// Values are shown in the player's currency (a guess from the browser's language until they pick one).
+function guessCur() {
+  const [lang, region] = String(navigator.language || '').toLowerCase().split('-');
+  const byRegion = { th: 'THB', jp: 'JPY', kr: 'KRW', cn: 'CNY', hk: 'HKD', tw: 'TWD', sg: 'SGD', my: 'MYR', ph: 'PHP', id: 'IDR', vn: 'VND', au: 'AUD', ca: 'CAD', gb: 'GBP',
+    de: 'EUR', fr: 'EUR', es: 'EUR', it: 'EUR', nl: 'EUR', be: 'EUR', at: 'EUR', ie: 'EUR', pt: 'EUR', fi: 'EUR', gr: 'EUR' };
+  const byLang = { th: 'THB', ja: 'JPY', ko: 'KRW', vi: 'VND', id: 'IDR' };
+  return region ? byRegion[region] || 'USD' : byLang[lang] || 'USD';
+}
+const curNow = () => { const c = S.ui.cur || guessCur(); return c === 'USD' || PR.fx[c] ? c : 'USD'; };
+function money(usd, cur = curNow()) {
+  const v = usd * (cur === 'USD' ? 1 : PR.fx[cur] || 1), whole = Math.abs(v) >= 1000 ? { minimumFractionDigits: 0, maximumFractionDigits: 0 } : {};
+  try { return new Intl.NumberFormat('en-US', { style: 'currency', currency: cur, currencyDisplay: 'narrowSymbol', ...whole }).format(v); }
+  catch { return `${cur} ${v.toFixed(whole.maximumFractionDigits === 0 ? 0 : 2)}`; }
+}
+const priceDate = () => { const m = /^(\d{4})-(\d\d)-(\d\d)/.exec(PR.updated); return m ? new Date(+m[1], m[2] - 1, +m[3]).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : ''; };
+// Ranks by total value in US dollars, named after the League of Legends ranked tiers. Each one dresses the vault up a little more.
+const TIERS = [['iron', 'Iron', 0, '#9AA0A8'], ['bronze', 'Bronze', 25, '#D0905A'], ['silver', 'Silver', 100, '#C9D4E0'], ['gold', 'Gold', 250, '#EAC25C'],
+  ['platinum', 'Platinum', 500, '#7FD6CB'], ['emerald', 'Emerald', 1000, '#34C98F'], ['diamond', 'Diamond', 2500, '#8FB4FF'], ['master', 'Master', 5000, '#C98DF4'],
+  ['grandmaster', 'Grandmaster', 10000, '#F06A62'], ['challenger', 'Challenger', 25000, '#F2C14E']];
+const tierOf = usd => TIERS.reduce((at, t, i) => usd >= t[2] ? i : at, 0);
+const tierFx = ti => [ti >= 2 && 'fx-sheen', ti >= 3 && 'fx-frame', ti >= 6 && 'fx-spark', ti >= 7 && 'fx-shimmer', ti >= 9 && 'fx-halo'].filter(Boolean).join(' ');
+// Fixed sparkle spots so the vault doesn't reshuffle on every redraw: [left %, top %, size px, delay s].
+const SPARKS = Array.from({ length: 18 }, (_, i) => { const r = k => (Math.sin((i + 1) * k) + 1) / 2; return [Math.round(r(12.9898) * 96 + 2), Math.round(r(78.233) * 92 + 3), 6 + Math.round(r(3.71) * 9), (r(5.13) * 3.8).toFixed(2)]; });
+// The rank crest: a hexagon like the site's logo, with wings from Gold, a gem from Diamond, a crown from Master and rays at Challenger.
+function crestSVG(ti) {
+  const m = 'url(#v-metal)', fill = `fill="${m}"`;
+  const rays = ti >= 9 ? Array.from({ length: 16 }, (_, i) => { const a = i * Math.PI / 8, r1 = 50, r2 = i % 2 ? 62 : 70;
+    return `<line x1="${(60 + Math.cos(a) * r1).toFixed(1)}" y1="${(60 + Math.sin(a) * r1).toFixed(1)}" x2="${(60 + Math.cos(a) * r2).toFixed(1)}" y2="${(60 + Math.sin(a) * r2).toFixed(1)}" stroke="${m}" stroke-width="2.5" stroke-linecap="round" opacity=".8"/>`; }).join('') : '';
+  const wings = ti >= 3 ? `<path d="M24 42 3 30l6 19-7 11 22 9z" ${fill}/><path d="M96 42l21-12-6 19 7 11-22 9z" ${fill}/>` : '';
+  const crown = ti >= 7 ? `<path d="M38 24 42 2l9 13 9-15 9 15 9-13 4 22z" ${fill}/>` : '';
+  const core = ti >= 6 ? `<path d="M60 36 78 60 60 84 42 60z" ${fill}/><path d="M60 36 78 60H42z" fill="#fff" opacity=".35"/><path d="M60 36v48M42 60h36" stroke="#000" stroke-opacity=".2" stroke-width="1"/>`
+    : `<path d="M60 36v48M45 47l15 11 15-11M45 73l15-11 15 11" fill="none" stroke="${m}" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>`;
+  return `<svg viewBox="0 0 120 120" aria-hidden="true"><defs><linearGradient id="v-metal" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" style="stop-color:var(--v-m3)"/><stop offset=".35" style="stop-color:var(--v-m2)"/><stop offset=".6" style="stop-color:var(--v-m1)"/><stop offset=".85" style="stop-color:var(--v-m2)"/><stop offset="1" style="stop-color:var(--v-m3)"/></linearGradient></defs>
+    ${rays}${wings}${crown}<path d="M60 14 98 36v48L60 106 22 84V36z" style="fill:var(--v-bg2)" stroke="${m}" stroke-width="5" stroke-linejoin="round"/>
+    <path d="M60 25 88 41v38L60 95 32 79V41z" fill="none" stroke="${m}" stroke-width="1.5" opacity=".55"/>${core}</svg>`;
+}
+// Each portfolio line with its product and price; lines whose product TCGplayer no longer lists stay, without a value.
+function folioSum(F) {
+  const rows = F.items.map(it => { const p = PR.byId.get(it.pid) || null, u = p ? p[it.f] ?? null : null; return { it, p, u, v: u == null ? 0 : u * it.q }; });
+  const sum = (l, f) => l.reduce((a, r) => a + f(r), 0);
+  return { rows, total: sum(rows, r => r.v), copies: sum(rows, r => r.it.q), unpriced: sum(rows.filter(r => r.u == null), r => r.it.q) };
+}
+const folioItem = (pid, f) => folio().items.find(it => it.pid === pid && it.f === f);
+function vaultHTML(F, s, own) {
+  const ti = tierOf(s.total), [, tname, , ] = TIERS[ti], next = TIERS[ti + 1], cur = curNow();
+  const progress = next ? Math.max(2, Math.min(100, (s.total - TIERS[ti][2]) / (next[2] - TIERS[ti][2]) * 100)) : 100;
+  const top = s.rows.filter(r => r.p && r.u != null).sort((a, b) => b.u - a.u).slice(0, 3);
+  const curs = ['USD', ...Object.keys(PR.fx)];
+  const jewel = (r, i) => `<figure class="jewel j${i + 1}"><button type="button" class="j-frame" data-act="pf-info" data-pid="${r.p.id}" title="${esc(r.p.n)}">${prodImg(r.p, 400)}</button>
+    <figcaption><span class="j-rk v-metal">No. ${i + 1}</span><span class="j-n">${esc(pName(r.p))}</span><span class="j-v">${esc([pVariant(r.p), r.it.f === 'F' ? 'Foil' : ''].filter(Boolean).join(' · ') || pLine(r.p))}</span><span class="j-p num">${money(r.u)}</span></figcaption></figure>`;
+  return `<section class="vault" style="--lvl:${ti}" aria-label="Portfolio value">
+    <span class="v-frame" aria-hidden="true"></span><span class="v-frame2" aria-hidden="true"></span>
+    ${ti >= 6 ? `<div class="v-fx" aria-hidden="true">${SPARKS.slice(0, ti >= 8 ? 18 : 11).map(([x, y, z, d]) => `<i style="left:${x}%;top:${y}%;--s:${z}px;--d:${d}s"></i>`).join('')}</div>` : ''}
+    <div class="v-head">
+      <div class="v-crest">${crestSVG(ti)}<span class="v-rank">${tname}</span></div>
+      <div class="v-main">
+        <span class="v-kicker">${own ? 'Portfolio value' : 'Shared portfolio'}</span>
+        ${own ? `<input id="pf-name" class="v-name" type="text" data-bind="folio" data-k="name" value="${esc(F.name || '')}" placeholder="${esc(folioName(F))}" maxlength="40" aria-label="Portfolio name">` : `<h2 class="v-name">${esc(folioName(F))}</h2>`}
+        <div class="v-total num">${money(s.total)}</div>
+        <div class="v-sub">${s.copies} card${s.copies === 1 ? '' : 's'} · ${s.rows.length} different${cur !== 'USD' ? ` · ${money(s.total, 'USD')} on TCGplayer` : ''}</div>
+        <div class="v-next">${next ? `<div class="v-bar" role="progressbar" aria-label="Progress to ${next[1]}" aria-valuenow="${Math.round(progress)}" aria-valuemin="0" aria-valuemax="100"><b style="width:${progress}%"></b></div><span>${money(next[2] - s.total)} more to reach ${next[1]}</span>` : '<span>The highest rank there is.</span>'}
+          <span class="v-ladder">${TIERS.map((t, j) => `<i class="${j <= ti ? 'on' : ''}${j === ti ? ' cur' : ''}" style="--c:${t[3]}" title="${t[1]}: from ${money(t[2])}"></i>`).join('')}</span></div>
+      </div>
+      <div class="v-act">
+        ${own ? `<button class="btn primary" data-act="pf-add-open">Add cards</button><button class="btn" data-act="pf-share"${F.items.length ? '' : ' disabled'}>Share</button>`
+          : `<button class="btn primary" data-act="pf-mine">${folio().items.length ? 'Back to my portfolio' : 'Make your own'}</button>`}
+        <select id="pf-cur" data-bind="pfui" data-k="cur" aria-label="Currency">${curs.map(c => `<option value="${c}"${c === cur ? ' selected' : ''}>${c}</option>`).join('')}</select>
+      </div>
+    </div>
+    ${top.length ? `<div class="v-sec">Most valuable</div><div class="v-jewels">${top.map(jewel).join('')}</div>` : ''}
+  </section>`;
+}
+function pfTileHTML(r, own) {
+  const { it, p, u } = r, key = it.pid + it.f, nm = p ? pName(p) : 'No longer listed on TCGplayer';
+  const ctl = !own ? '' : S.ui.confirm === 'pf:' + key
+    ? `<div class="confirm">Remove? <button class="btn sm danger" data-act="pf-del" data-pid="${it.pid}" data-f="${it.f}">Remove</button><button class="btn sm" data-act="unconfirm">Keep</button></div>`
+    : `<div class="pf-ctl"><span class="stepper sm"><button type="button" data-act="pf-q" data-pid="${it.pid}" data-f="${it.f}" data-d="-1" aria-label="One fewer"${it.q <= 1 ? ' disabled' : ''}>−</button><span>${it.q}</span><button type="button" data-act="pf-q" data-pid="${it.pid}" data-f="${it.f}" data-d="1" aria-label="One more">+</button></span>
+      ${p && pFinishes(p).length > 1 ? `<span class="seg pf-fin" role="group" aria-label="Finish">${['N', 'F'].map(f => `<button type="button" class="N" data-act="pf-fin" data-pid="${it.pid}" data-f="${it.f}" data-v="${f}" aria-pressed="${it.f === f}">${FINISH[f]}</button>`).join('')}</span>` : ''}
+      <button type="button" class="mi-x" data-act="confirm" data-what="pf:${key}" title="Remove from portfolio" aria-label="Remove ${esc(nm)}">×</button></div>`;
+  return `<div class="pf-card">
+    <button type="button" class="pf-img" data-act="pf-info" data-pid="${it.pid}" title="${esc(p ? p.n : nm)}">${p ? prodImg(p) : ''}${it.f === 'F' ? '<span class="pf-foil">Foil</span>' : ''}${it.q > 1 ? `<span class="pf-q">×${it.q}</span>` : ''}</button>
+    <div class="pf-n">${esc(nm)}</div>${p ? `<div class="pf-v">${esc(pLine(p))}</div>` : ''}
+    <div class="pf-p">${u == null ? '<span class="small muted">No price</span>' : `<b class="num">${money(u)}</b>${it.q > 1 ? `<span class="small muted num">= ${money(u * it.q)}</span>` : ''}`}</div>
+    ${ctl}</div>`;
+}
+function pfGridHTML() {
+  const shared = S.ui.shared, F = shared || folio(), words = norm(S.ui.pfq).split(' ').filter(Boolean);
+  let rows = folioSum(F).rows.filter(r => !shared || r.p);
+  if (words.length) rows = rows.filter(r => r.p && prodHasText(r.p, words));
+  const name = r => r.p ? pName(r.p) : '~';
+  const by = { value: (a, b) => b.v - a.v, price: (a, b) => (b.u ?? -1) - (a.u ?? -1), name: (a, b) => name(a).localeCompare(name(b)), new: (a, b) => (b.it.at || 0) - (a.it.at || 0) }[S.ui.pfSort] || ((a, b) => b.v - a.v);
+  rows.sort((a, b) => by(a, b) || name(a).localeCompare(name(b)));
+  return rows.length ? rows.map(r => pfTileHTML(r, !shared)).join('') : `<p class="muted" style="grid-column:1/-1;margin:0">Nothing matches “${esc(S.ui.pfq)}”.</p>`;
+}
+function viewPortfolio() {
+  loadPrices();
+  if (!PR.ok) return `<section class="panel"><div class="empty"><h3>${PR.failed ? 'The TCGplayer prices didn’t load' : 'Loading TCGplayer prices…'}</h3>${PR.failed ? '<p>Check your connection and try again.</p><button class="btn" data-act="pf-retry">Try again</button>' : ''}</div></section>`;
+  const shared = S.ui.shared, own = !shared, F = shared || folio(), s = folioSum(shared ? { items: F.items.filter(it => PR.byId.has(it.pid)) } : F), ti = tierOf(s.total);
+  const cur = curNow(), date = priceDate();
+  const sorts = [['value', 'Highest value'], ['price', 'Highest price each'], ['name', 'Name'], ['new', 'Newest']];
+  const collection = s.rows.length ? `
+    <div class="panel-head"><h2>${own ? 'Your cards' : 'Cards'}</h2>
+      <div class="pf-tools"><input id="pf-q" type="search" data-bind="pfq" value="${esc(S.ui.pfq || '')}" placeholder="Search these cards" aria-label="Search the portfolio" autocomplete="off">
+        <select id="pf-sort" data-bind="pfui" data-k="pfSort" aria-label="Sort">${sorts.map(([k, n]) => `<option value="${k}"${k === (S.ui.pfSort || 'value') ? ' selected' : ''}>${n}</option>`).join('')}</select></div></div>
+    <div class="pf-grid" id="pf-grid">${pfGridHTML()}</div>`
+    : `<div class="empty"><h3>${own ? 'Show off your collection' : 'This portfolio is empty'}</h3>${own ? `<p style="max-width:52ch;margin:0">Add the cards you want to show, in the exact printing you own: alternate arts, overnumbered, signatures, promos, foils and sealed products. Your portfolio is valued at TCGplayer prices, and the more it’s worth, the grander it looks.</p><button class="btn primary" data-act="pf-add-open">Add cards</button>` : ''}</div>`;
+  return `<div class="folio t-${TIERS[ti][0]} ${tierFx(ti)}">
+    ${vaultHTML(F, s, own)}
+    <section class="panel">${collection}
+      ${s.unpriced ? `<p class="small muted" style="margin:14px 0 0">${s.unpriced} card${s.unpriced === 1 ? ' has' : 's have'} no TCGplayer price yet and ${s.unpriced === 1 ? 'isn’t' : 'aren’t'} counted.</p>` : ''}
+      ${S.ui.copy ? copyBox() : ''}
+      <p class="small muted pf-foot">Values are TCGplayer market prices${date ? ` from ${date}` : ''}, updated daily${cur !== 'USD' ? `, converted from US dollars at 1 USD = ${PR.fx[cur].toLocaleString('en-US', { maximumFractionDigits: 2 })} ${cur}` : ''}. They’re a guide: real prices depend on condition. Card pictures from TCGplayer.</p>
+    </section>
+  </div>`;
+}
+// Add cards: every TCGplayer printing, searchable, most valuable first. Each finish that has a price gets its own button.
+function pfaListHTML() {
+  const a = S.ui.pfa, words = norm(a.q).split(' ').filter(Boolean), have = new Map();
+  folio().items.forEach(it => have.set(it.pid, (have.get(it.pid) || 0) + it.q));
+  const l = PR.list.filter(p => (a.set === 'sealed' ? p.sealed : !p.sealed && (!a.set || p.s === a.set)) && prodHasText(p, words));
+  l.sort(a.sort === 'name' ? (x, y) => pName(x).localeCompare(pName(y)) || pTop(y) - pTop(x) : (x, y) => pTop(y) - pTop(x) || pName(x).localeCompare(pName(y)));
+  const tile = p => { const fs = pFinishes(p), n = have.get(p.id) || 0;
+    return `<div class="pfa"><span class="pf-img">${prodImg(p)}</span><span class="pfa-n">${esc(pName(p))}</span><span class="pfa-v">${esc([pLine(p), p.r].filter(Boolean).join(' · '))}</span>
+      <span class="pfa-add">${(fs.length ? fs : ['N']).map(f => `<button type="button" class="btn sm" data-act="pf-add" data-pid="${p.id}" data-f="${f}">+ ${fs.length ? FINISH[f] : 'Add (no price yet)'}${fs.length ? ` <b class="num">${money(p[f])}</b>` : ''}</button>`).join('')}</span>
+      <span class="pfa-have" data-have="${p.id}"${n ? '' : ' hidden'}>${n} in your portfolio</span></div>`; };
+  return `<p class="small muted" style="margin:0 0 10px">${l.length.toLocaleString('en-US')} result${l.length === 1 ? '' : 's'}${a.sort === 'name' ? '' : ', most valuable first'}</p>
+    ${l.length ? `<div class="pfa-grid">${l.slice(0, a.limit).map(tile).join('')}</div>` : `<p class="muted">Nothing matches “${esc(a.q)}”.</p>`}
+    ${l.length > a.limit ? `<p style="margin:16px 0 0;text-align:center"><button type="button" class="btn" data-act="pfa-more">Show more</button></p>` : ''}`;
+}
+function openFolioAdd() {
+  if (!PR.ok) { toast('Prices are still loading.'); return; }
+  S.ui.pfa = { q: '', set: '', sort: 'price', ...S.ui.pfa, limit: 60 };
+  const a = S.ui.pfa, sets = Object.entries(PR.sets).reverse().filter(([k]) => PR.list.some(p => p.s === k && !p.sealed));
+  const m = document.getElementById('modal');
+  m.querySelector('.modal-card').classList.add('wide');
+  document.getElementById('modal-body').innerHTML = `<h2 id="modal-title" style="font-size:19px;margin:0 70px 0 0">Add to your portfolio</h2>
+    <p class="small muted" style="margin:4px 0 0">Every printing sold on TCGplayer. Pick the one you own, normal or foil.</p>
+    <div class="row pk-bar pfa-bar"><input id="pfa-q" type="search" value="${esc(a.q)}" placeholder="Card, set or number (e.g. Jinx signature, OGN 301)" data-bind="pfa" data-k="q" autocomplete="off" aria-label="Search TCGplayer products">
+      <select id="pfa-set" data-bind="pfa" data-k="set" aria-label="Set"><option value="">All sets</option>${sets.map(([k, n]) => `<option value="${esc(k)}"${a.set === k ? ' selected' : ''}>${esc(n)}</option>`).join('')}<option value="sealed"${a.set === 'sealed' ? ' selected' : ''}>Sealed products</option></select>
+      <select id="pfa-sort" data-bind="pfa" data-k="sort" aria-label="Sort"><option value="price">Most valuable</option><option value="name"${a.sort === 'name' ? ' selected' : ''}>Name</option></select></div>
+    <div id="pfa-list">${pfaListHTML()}</div>`;
+  m.hidden = false;
+  (matchMedia('(hover: hover)').matches ? document.getElementById('pfa-q') : m.querySelector('.modal-x')).focus();
+}
+function folioAdd(pid, f) {
+  const p = PR.byId.get(pid); if (!p) return;
+  const F = folio(), it = folioItem(pid, f);
+  if (it) it.q = Math.min(999, it.q + 1); else F.items.push({ pid, f, q: 1, at: Date.now() });
+  persist('settings', 'main', 400);
+  const tag = document.querySelector(`[data-have="${pid}"]`), n = F.items.filter(x => x.pid === pid).reduce((a, x) => a + x.q, 0);
+  if (tag) { tag.textContent = `${n} in your portfolio`; tag.hidden = false; }
+  toast(`Added ${pName(p)}${pVariant(p) ? ` (${pVariant(p)})` : ''}${f === 'F' ? ', foil' : ''}`);
+  render();
+}
+// Switching a line to the other finish joins it with a line already in that finish.
+function folioFinish(pid, from, to) {
+  const F = folio(), it = folioItem(pid, from), other = folioItem(pid, to); if (!it || from === to) return;
+  if (other) { other.q = Math.min(999, other.q + it.q); F.items = F.items.filter(x => x !== it); } else it.f = to;
+  persist('settings', 'main', 400); render();
+}
+function openProduct(pid) {
+  const p = PR.byId.get(pid); if (!p) return;
+  const c = p.k && CDB.byKey.get(p.k), mine = S.ui.shared ? [] : folio().items.filter(it => it.pid === pid), fs = pFinishes(p);
+  S.ui.cardKey = null;
+  document.getElementById('modal-body').innerHTML = `<div class="cdetail pf-detail">
+    <span class="pf-img">${prodImg(p, 400)}</span>
+    <div style="display:grid;gap:12px;align-content:start;min-width:0">
+      <div><h2 id="modal-title" style="font-size:20px;margin-right:64px;overflow-wrap:anywhere">${esc(pName(p))}</h2><div class="muted">${esc([pVariant(p), p.r, p.sealed ? PR.sets[p.s] : `${PR.sets[p.s] || p.s} ${p.no || ''}`.trim()].filter(Boolean).join(' · '))}</div></div>
+      ${fs.length ? `<table><tbody>${fs.map(f => `<tr><th>${FINISH[f]}</th><td class="r num">${money(p[f])}</td></tr>`).join('')}</tbody></table>` : '<p class="muted" style="margin:0">No TCGplayer price yet.</p>'}
+      ${mine.length ? `<p style="margin:0">In your portfolio: ${mine.map(it => `${it.q} ${FINISH[it.f].toLowerCase()}`).join(', ')}</p>` : ''}
+      <div class="row"><a class="btn sm" href="https://www.tcgplayer.com/product/${p.id}" target="_blank" rel="noopener">View on TCGplayer</a>${c ? `<button type="button" class="btn sm" data-act="card-info" data-k="${esc(c.k)}">Card text</button>` : ''}</div>
+    </div></div>`;
+  const m = document.getElementById('modal'); m.hidden = false; m.querySelector('.modal-x').focus();
+}
+// Sharing: the portfolio rides in the link itself (#folio=<name>~<items>), so it needs no account and shows today's prices.
+// Each item is the product id in base 36, the finish (N/F) and the count when more than one: "e01mF2-e01n9N".
+function folioLink(F) {
+  const items = F.items.map(it => it.pid.toString(36) + it.f + (it.q > 1 ? it.q : '')).join('-');
+  return `${location.origin}${location.pathname}#folio=${encodeURIComponent(folioName(F)).replace(/~/g, '%7E')}~${items}`;
+}
+async function shareFolio() {
+  const F = folio(); if (!F.items.length) { toast('Add some cards first.'); return; }
+  const url = folioLink(F), title = folioName(F);
+  if (navigator.share && matchMedia('(hover: none)').matches) {
+    try { await navigator.share({ title, text: `${title}: ${money(folioSum(F).total)} on Riftcheese`, url }); return; }
+    catch (e) { if (e && e.name === 'AbortError') return; }
+  }
+  copyText(url, 'Portfolio link copied');
+}
+function openSharedFolio() {
+  if (!location.hash.startsWith('#folio=')) return false;
+  const body = location.hash.slice(7), at = body.indexOf('~'); if (at < 0) return false;
+  let name = ''; try { name = decodeURIComponent(body.slice(0, at)); } catch {}
+  const items = body.slice(at + 1).split('-').map(x => /^([0-9a-z]{1,8})([NF])(\d{0,3})$/.exec(x)).filter(Boolean).map(m => ({ pid: parseInt(m[1], 36), f: m[2], q: Math.max(1, +m[3] || 1) }));
+  S.ui.shared = { name: name.slice(0, 40), items }; S.ui.tab = 'portfolio'; S.ui.confirm = null; S.ui.pfq = '';
+  return true;
+}
+function leaveSharedFolio() {
+  if (!S.ui.shared) return;
+  S.ui.shared = null; S.ui.pfq = '';
+  if (location.hash.startsWith('#folio=')) history.replaceState(null, '', location.pathname + location.search);
+}
+addEventListener('hashchange', () => { if (openSharedFolio()) { render(); window.scrollTo(0, 0); } });
+// A TCGplayer picture that doesn't load (offline, or not up yet) falls back to the card's own picture when there is one.
+document.addEventListener('error', e => {
+  const im = e.target; if (!im || im.tagName !== 'IMG' || !im.classList.contains('timg') || im.dataset.failed) return;
+  im.dataset.failed = '1';
+  const c = im.dataset.k && CDB.byKey.get(im.dataset.k);
+  if (c && c.im) im.outerHTML = thumb(c, 0); else im.classList.add('gone');
+}, true);
+
 // ---------- actions ----------
-function setTab(t) { if (t === 'feedback' && S.ui.tab !== 'feedback') S.ui.prevTab = S.ui.tab; S.ui.tab = t; S.ui.confirm = null; S.ui.copy = null; saveUI(); render(); window.scrollTo(0, 0); }
+function setTab(t) { leaveSharedFolio(); if (t === 'feedback' && S.ui.tab !== 'feedback') S.ui.prevTab = S.ui.tab; S.ui.tab = t; S.ui.confirm = null; S.ui.copy = null; saveUI(); render(); window.scrollTo(0, 0); }
 function newDeck(base) {
   const id = uid('d');
   S.decks[id] = base ? { ...clone(base), id, name: (base.name || 'Deck') + ' (copy)', example: false, created: Date.now() }
@@ -3104,10 +3483,21 @@ document.addEventListener('click', e => {
     case 'dv-open': openDeckView(); break;
     case 'dv-close': closeDeckView(); break;
     case 'dv-png': { const d2 = curDeck(); if (d2) saveDeckPNG(d2, b); break; }
+    case 'pf-add-open': openFolioAdd(); break;
+    case 'pf-add': folioAdd(+b.dataset.pid, b.dataset.f); break;
+    case 'pfa-more': S.ui.pfa.limit += 60; document.getElementById('pfa-list').innerHTML = pfaListHTML(); break;
+    case 'pf-q': { const it = folioItem(+b.dataset.pid, b.dataset.f); if (!it) break; it.q = Math.max(1, Math.min(999, it.q + +b.dataset.d)); persist('settings', 'main', 400); render(); break; }
+    case 'pf-fin': folioFinish(+b.dataset.pid, b.dataset.f, b.dataset.v); break;
+    case 'pf-del': { const F = folio(), it = folioItem(+b.dataset.pid, b.dataset.f); F.items = F.items.filter(x => x !== it); S.ui.confirm = null;
+      persist('settings', 'main'); if (it) toast(`Removed ${PR.byId.has(it.pid) ? pName(PR.byId.get(it.pid)) : 'card'} from your portfolio`); render(); break; }
+    case 'pf-info': openProduct(+b.dataset.pid); break;
+    case 'pf-share': shareFolio(); break;
+    case 'pf-mine': setTab('portfolio'); break;
+    case 'pf-retry': loadPrices(); render(); break;
     case 'clear-examples': {
       Object.values(S.decks).filter(x => x.example).forEach(x => removeDoc('decks', x.id));
       Object.values(S.matches).filter(x => x.example).forEach(x => removeDoc('matches', x.id));
-      if (S.settings.example) { S.settings = { id: 'main', field: [], rules: { ...(S.settings.rules || RULES_DEFAULT) } }; persist('settings', 'main'); }
+      if (S.settings.example) { S.settings = { id: 'main', field: [], rules: { ...(S.settings.rules || RULES_DEFAULT) }, ...(S.settings.folio ? { folio: S.settings.folio } : {}) }; persist('settings', 'main'); }
       S.ui.confirm = null; S.ui.deckId = null; ensureDeck(); S.form = blankForm(); saveUI(); toast('Example data cleared'); render(); break; }
   }
 });
@@ -3143,6 +3533,10 @@ document.addEventListener('input', e => {
   const k = el.dataset.k, d = curDeck();
   if (bind === 'pick') { S.ui.pick.q = el.value; document.getElementById('pk-list').innerHTML = pickListHTML(); return; }
   if (bind === 'hist') { S.ui.hq = el.value; const h = document.getElementById('hist-list'); if (h) h.innerHTML = historyListHTML(); return; }
+  if (bind === 'folio') { folio()[k] = el.value.slice(0, 40); persist('settings', 'main', 700); return; }
+  if (bind === 'pfq') { S.ui.pfq = el.value; const g = document.getElementById('pf-grid'); if (g) g.innerHTML = pfGridHTML(); return; }
+  if (bind === 'pfui') { S.ui[k] = el.value; saveUI(); render(); return; }
+  if (bind === 'pfa') { S.ui.pfa[k] = el.value; S.ui.pfa.limit = 60; document.getElementById('pfa-list').innerHTML = pfaListHTML(); return; }
   if (bind === 'cf') {
     S.ui.cf[k] = el.value; S.ui.cf.limit = 60; renderResults();
   } else if (bind === 'game') {
@@ -3277,6 +3671,7 @@ function adsInit() {
 renderFoot();
 adsInit();
 installInit();
+openSharedFolio();
 boot();
 })();
 </script>
